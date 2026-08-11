@@ -71,7 +71,7 @@ jobs:
         continue-on-error: true
         run: >
           vpk download github
-          --repoUrl https://github.com/jhoelmaister/wpfappvba
+          --repoUrl https://github.com/maister1122/WpfAppVba
           --channel visor
           --token ${{ secrets.GITHUB_TOKEN }}
 
@@ -89,7 +89,7 @@ jobs:
       - name: Upload (publica la Release en este repo)
         run: >
           vpk upload github
-          --repoUrl https://github.com/jhoelmaister/wpfappvba
+          --repoUrl https://github.com/maister1122/WpfAppVba
           --channel visor
           --publish
           --releaseName "Visor Empresa v${{ steps.ver.outputs.version }}"

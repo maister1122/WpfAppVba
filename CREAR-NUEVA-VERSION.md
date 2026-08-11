@@ -14,7 +14,7 @@ Son **2 pasos**:
 ## Paso 1 — Subir el número de versión en `master`
 
 1. Abre el archivo del proyecto:
-   <https://github.com/jhoelmaister/WpfAppVba/blob/master/WpfAppVba/WpfAppVba.csproj>
+   <https://github.com/maister1122/WpfAppVba/blob/master/WpfAppVba/WpfAppVba.csproj>
 
 2. Arriba a la derecha del archivo, haz clic en el **lápiz ✏️** (*Edit this file*).
 
@@ -47,7 +47,7 @@ Son **2 pasos**:
 ## Paso 2 — Lanzar el workflow (publica la release)
 
 1. Abre las Actions del repo:
-   <https://github.com/jhoelmaister/WpfAppVba/actions/workflows/release.yml>
+   <https://github.com/maister1122/WpfAppVba/actions/workflows/release.yml>
 
    > Si no se abre directo: pestaña **Actions** → en la lista de la izquierda elige
    > **"Publicar release (Velopack)"**.
@@ -85,9 +85,9 @@ botón **🔄 Actualizar** la próxima vez que la abran.
 ## Cómo saber qué versión es la actual
 
 Mírala en la línea `<Version>...</Version>` del csproj
-(<https://github.com/jhoelmaister/WpfAppVba/blob/master/WpfAppVba/WpfAppVba.csproj>),
+(<https://github.com/maister1122/WpfAppVba/blob/master/WpfAppVba/WpfAppVba.csproj>),
 o en la última release publicada:
-<https://github.com/jhoelmaister/WpfAppVba/releases>.
+<https://github.com/maister1122/WpfAppVba/releases>.
 
 ---
 

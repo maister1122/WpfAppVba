@@ -93,7 +93,7 @@ namespace SistemaGestion
     public class ActualizadorApp
     {
         // Repo PÚBLICO que aloja las releases (Setup.exe + *.nupkg + RELEASES).
-        private const string RepoUrl = "https://github.com/jhoelmaister/wpfappvba";
+        private const string RepoUrl = "https://github.com/maister1122/WpfAppVba";
 
         private readonly UpdateManager _mgr;
         private UpdateInfo? _update;
@@ -274,7 +274,7 @@ jobs:
         run: vpk pack --packId SistemaGestion --packVersion ${{ steps.ver.outputs.version }} --packDir ./publish --mainExe SistemaGestion.exe --packTitle "Sistema de Gestión" --icon SistemaGestion/icono.ico
 
       - name: Upload
-        run: vpk upload github --repoUrl https://github.com/jhoelmaister/wpfappvba --publish --releaseName "v${{ steps.ver.outputs.version }}" --tag "v${{ steps.ver.outputs.version }}" --token ${{ secrets.GITHUB_TOKEN }}
+        run: vpk upload github --repoUrl https://github.com/maister1122/WpfAppVba --publish --releaseName "v${{ steps.ver.outputs.version }}" --tag "v${{ steps.ver.outputs.version }}" --token ${{ secrets.GITHUB_TOKEN }}
 ```
 
 ### Paso 7 — Hacer público el repositorio
@@ -302,7 +302,7 @@ Comparte el `Setup.exe` de la última release. Enlace permanente que siempre apu
 más reciente:
 
 ```
-https://github.com/jhoelmaister/WpfAppVba/releases/latest/download/SistemaGestion-win-Setup.exe
+https://github.com/maister1122/WpfAppVba/releases/latest/download/SistemaGestion-win-Setup.exe
 ```
 
 El usuario lo instala una vez; de ahí en adelante se actualiza solo dentro de la app.

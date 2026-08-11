@@ -56,7 +56,7 @@ La app instalada detecta versiones nuevas y muestra un botón **🔄 Actualizar*
 2. Lleva ese cambio a la rama `master` (commit + PR + merge; el bump DEBE quedar en `master`,
    no solo en la rama de trabajo).
 3. Avisa al usuario que ya puede lanzar el release con **Run workflow**:
-   https://github.com/jhoelmaister/WpfAppVba/actions/workflows/release.yml
+   https://github.com/maister1122/WpfAppVba/actions/workflows/release.yml
    (el paso de "Run workflow" lo hace el usuario; Claude en la web no puede dispararlo
    ni empujar tags).
 

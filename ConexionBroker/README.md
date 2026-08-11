@@ -41,7 +41,7 @@ apt install -y dotnet-sdk-8.0
 
 ```bash
 cd ~
-git clone https://github.com/jhoelmaister/WpfAppVba.git
+git clone https://github.com/maister1122/WpfAppVba.git
 cd WpfAppVba/ConexionBroker
 ```
 

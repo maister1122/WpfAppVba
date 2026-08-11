@@ -17,7 +17,7 @@ namespace SistemaGestion
     {
         // Repo PÚBLICO que aloja las releases (Setup.exe + *.nupkg + RELEASES).
         // Generadas con `vpk pack` y subidas con `vpk upload github`.
-        private const string RepoUrl = "https://github.com/jhoelmaister/wpfappvba";
+        private const string RepoUrl = "https://github.com/maister1122/WpfAppVba";
 
         private readonly UpdateManager _mgr;
         private UpdateInfo? _update;

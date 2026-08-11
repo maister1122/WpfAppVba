@@ -71,7 +71,7 @@ jobs:
         continue-on-error: true
         run: >
           vpk download github
-          --repoUrl https://github.com/jhoelmaister/wpfappvba
+          --repoUrl https://github.com/maister1122/WpfAppVba
           --token ${{ secrets.GITHUB_TOKEN }}
 
       - name: Pack (Setup.exe + nupkg full/delta + RELEASES)
@@ -87,7 +87,7 @@ jobs:
       - name: Upload (publica la Release en este repo)
         run: >
           vpk upload github
-          --repoUrl https://github.com/jhoelmaister/wpfappvba
+          --repoUrl https://github.com/maister1122/WpfAppVba
           --publish
           --releaseName "Sistema de Gestión v${{ steps.ver.outputs.version }}"
           --tag "v${{ steps.ver.outputs.version }}"

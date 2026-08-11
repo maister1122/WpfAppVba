@@ -9,7 +9,7 @@ Aplicación de escritorio Windows (WPF, .NET 8) para gestión empresarial: artí
 - **Base de datos**: SQL Server — acceso vía `Microsoft.Data.SqlClient 7.0.1`
 - **Reportes Excel**: `ClosedXML 0.102.2`
 - **IDE recomendado**: Visual Studio 2022 / VS Code + extensión C#
-- **Proyecto**: `SistemaGestion/SistemaGestion.csproj` (renombrado desde `WpfAppVba/WpfAppVba.csproj` — el repo de GitHub sigue llamándose `jhoelmaister/WpfAppVba`, solo cambió el proyecto/carpeta/namespace de adentro)
+- **Proyecto**: `SistemaGestion/SistemaGestion.csproj` (renombrado desde `WpfAppVba/WpfAppVba.csproj` — el repo de GitHub sigue llamándose `maister1122/WpfAppVba`, solo cambió el proyecto/carpeta/namespace de adentro)
 - **Tercer proyecto (desde sesión 2026-07-27)**: `ConexionBroker/ConexionBroker.csproj` — servicio ASP.NET Core Minimal API, `net8.0` (multiplataforma, NO `-windows`), desplegado aparte en un VPS Linux. Ver sección "ConexionBroker (servicio de autenticación)" más abajo.
 - **Rama de desarrollo activa**: `master` (desde sesión 2026-06-18 en adelante se trabaja directo en `master`; las ramas `claude/*` no se pushean al remoto — ver CLAUDE.md)
 
@@ -434,7 +434,7 @@ Servicio server-side mínimo (`ConexionBroker/`, ASP.NET Core Minimal API, `.NET
 > Sesión muy larga con varios bloques de trabajo bien diferenciados, documentados de una sola vez. Los primeros bloques (versión, rename, features de Excel) fueron pedidos concretos turno a turno; el bloque final (caché de VisorEmpresa) partió de una pregunta del usuario sobre por qué el visor volvía a consultar SQL al loguear, y terminó en una serie de fixes encadenados hasta lograr que el login precargue todo lo que las pantallas necesitan.
 
 #### Rename del proyecto principal: WpfAppVba → SistemaGestion
-- La carpeta/csproj/sln/namespace de la app principal pasaron de `WpfAppVba` a `SistemaGestion` (el repo de GitHub sigue llamándose `jhoelmaister/WpfAppVba`, solo cambió el proyecto de adentro). El ejecutable resultante es `SistemaGestion.exe`.
+- La carpeta/csproj/sln/namespace de la app principal pasaron de `WpfAppVba` a `SistemaGestion` (el repo de GitHub sigue llamándose `maister1122/WpfAppVba`, solo cambió el proyecto de adentro). El ejecutable resultante es `SistemaGestion.exe`.
 - `SistemaGestion.sln` renombrado a `Solucion.sln` (el nombre casi idéntico a la carpeta `SistemaGestion/` confundía en el listado de archivos de GitHub).
 - Versiones (`<Version>`) de `SistemaGestion.csproj` y `VisorEmpresa.csproj` reiniciadas a `1.0.1` tras borrar manualmente los releases viejos (`v1.0.0`–`v1.1.4`) del repo renombrado, ya que no se había publicado ninguna versión nueva todavía bajo el nombre nuevo.
 

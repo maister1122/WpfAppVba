@@ -21,7 +21,7 @@ cambio esté en `master` (commit directo o vía PR mergeado). Si trabajas con Cl
 **Paso 2 — Lanzar el workflow (lo haces tú con un clic).**
 GitHub no permite que Claude (web) dispare releases, así que este paso es manual:
 
-1. Abre <https://github.com/jhoelmaister/WpfAppVba/actions/workflows/release.yml>
+1. Abre <https://github.com/maister1122/WpfAppVba/actions/workflows/release.yml>
 2. Botón **Run workflow**.
 3. En *version* escribe la versión (ej. `1.0.1`) o déjalo vacío para usar la del csproj.
 4. **Run workflow** (verde).
@@ -46,7 +46,7 @@ necesitas. Con GitHub Actions normalmente no hace falta.
 dotnet tool install -g vpk
 ```
 
-El feed de actualización es el repo **público** `https://github.com/jhoelmaister/wpfappvba`
+El feed de actualización es el repo **público** `https://github.com/maister1122/WpfAppVba`
 (configurado en `SistemaGestion/ActualizadorApp.cs`). Para **subir** releases necesitas un
 token de GitHub con permiso sobre ese repo.
 
@@ -136,7 +136,7 @@ o ajustarlos).
 
    ```powershell
    vpk upload github `
-       --repoUrl https://github.com/jhoelmaister/wpfappvba `
+       --repoUrl https://github.com/maister1122/WpfAppVba `
        --publish `
        --releaseName "v1.0.1" `
        --tag v1.0.1 `
