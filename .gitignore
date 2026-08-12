@@ -368,3 +368,10 @@ FodyWeavers.xsd
 ConexionBroker/appsettings.Production.json
 ConexionBroker/appsettings.Local.json
 ConexionBroker/*.env
+# Copias de respaldo que dejan los editores al tocar esos archivos en el VPS
+# (nano deja .save, vim deja .swp/~): tienen las credenciales en texto plano y
+# el patrón de arriba, al ser un nombre exacto, no las cubre.
+ConexionBroker/appsettings.*.json.*
+ConexionBroker/*.save
+ConexionBroker/*~
+ConexionBroker/*.swp
