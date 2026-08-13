@@ -31,9 +31,18 @@ namespace VisorEmpresa.Data
         private static string SeguridadCanal =>
             $"Encrypt=True;TrustServerCertificate={(ValidarCertificadoServidor ? "False" : "True")};";
 
+        // ─── Tiempo para ESTABLECER la conexión (no para ejecutar consultas) ──
+        // La app se conecta por internet a un SQL Server con TLS, así que abrir la
+        // conexión incluye el handshake previo al login, que en una red lenta tarda
+        // varios segundos. Con 10 s el login llegó a fallar en producción por 29 ms:
+        // "inicialización=1555; protocolo de enlace=8474" = 10029 ms. 20 s deja
+        // margen sin volver eterna la espera cuando el servidor está caído de verdad
+        // (peor caso con el reintento de abajo: ~42 s).
+        private const int TimeoutConexionSeg = 20;
+
         private static string ConnectionString =>
             $"Server={_server};Database={_database};User Id={_user};Password={_password};" +
-            $"Application Name=edber;Connect Timeout=10;Command Timeout=10;{SeguridadCanal}" +
+            $"Application Name=edber;Connect Timeout={TimeoutConexionSeg};Command Timeout=10;{SeguridadCanal}" +
             // Resiliencia ante red inestable: reconecta de forma transparente una
             // conexión idle que se rompió por un microcorte (idle connection resiliency).
             $"Connect Retry Count=3;Connect Retry Interval=10;Pooling=true;";
@@ -60,28 +69,77 @@ namespace VisorEmpresa.Data
             if (_connection == null)
             {
                 _connection = new SqlConnection(ConnectionString);
-                _connection.Open();
+                AbrirConReintentos(_connection);
                 return _connection;
             }
 
             if (_connection.State == System.Data.ConnectionState.Closed ||
                 _connection.State == System.Data.ConnectionState.Broken)
             {
-                try { _connection.Open(); }
+                try { AbrirConReintentos(_connection); }
                 catch
                 {
                     _connection.Dispose();
                     _connection = new SqlConnection(ConnectionString);
-                    _connection.Open();
+                    AbrirConReintentos(_connection);
                 }
             }
 
             return _connection;
         }
 
+        // ─── Abrir la conexión, reintentando los fallos de red ───────────────
+        // Un tiempo de espera agotado o un corte durante el handshake es
+        // transitorio: el segundo intento entra (es exactamente lo que hacía el
+        // usuario a mano, volviendo a loguear). Se reintenta SOLO ante errores de
+        // red/tiempo; una contraseña incorrecta o una base inexistente fallan al
+        // primer intento, sin espera de más.
+        private const int IntentosApertura = 2;
+
+        private static void AbrirConReintentos(SqlConnection conn)
+        {
+            for (int intento = 1; ; intento++)
+            {
+                try
+                {
+                    conn.Open();
+                    return;
+                }
+                catch (SqlException ex) when (intento < IntentosApertura && EsErrorTransitorio(ex))
+                {
+                    System.Threading.Thread.Sleep(2000);
+                }
+            }
+        }
+
+        // Códigos de error de red / tiempo agotado de SQL Server (el resto —
+        // credenciales, permisos, base inexistente— no tiene sentido reintentarlos).
+        private static bool EsErrorTransitorio(SqlException ex)
+        {
+            foreach (SqlError error in ex.Errors)
+            {
+                switch (error.Number)
+                {
+                    case -2:     // tiempo de espera agotado (el caso del handshake lento)
+                    case 53:     // no se encuentra el servidor / red
+                    case 121:    // el período de espera del semáforo expiró
+                    case 232:
+                    case 233:    // la conexión se cerró durante el establecimiento
+                    case 258:
+                    case 10053:  // el software anuló una conexión establecida
+                    case 10054:  // conexión restablecida por el par
+                    case 10060:  // no se pudo alcanzar el host
+                    case 10061:  // conexión rechazada
+                    case 11001:  // no se resolvió el nombre del host
+                        return true;
+                }
+            }
+            return false;
+        }
+
         // ─── Sonda rápida de conexión (no toca la conexión compartida) ───────
         // Usa una conexión propia y desechable con timeout corto, para verificar el
-        // estado de la red sin congelar la app los 10 s del timeout normal ni romper
+        // estado de la red sin congelar la app los 20 s del timeout normal ni romper
         // la conexión global en uso. La usa el timer de ConexionEstado.
         public static bool Sondear(int timeoutSeg = 2)
         {
