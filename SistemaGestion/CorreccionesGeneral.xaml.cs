@@ -70,6 +70,14 @@ namespace SistemaGestion
                 var idObj = Sql.DocumentosCObj.Mover(i);
                 if (idObj == null) continue;
                 string id = idObj.ToString()!;
+
+                // MISMO filtro de movimiento que CargarCorrecciones: sin esto, la
+                // sección Retirados arma el árbol con los meses de las repuestas (y
+                // al revés), quedando el árbol lleno con el grid vacío.
+                string movArbol = NormalizarMovimiento(Sql.DocumentosCObj.ObtenerItem("movimiento", id)?.ToString());
+                if (!string.IsNullOrEmpty(ObtenerFiltroTipo()) &&
+                    !string.Equals(movArbol, ObtenerFiltroTipo(), StringComparison.OrdinalIgnoreCase)) continue;
+
                 string suc = Sql.DocumentosCObj.ObtenerItem("sucursal", id)?.ToString() ?? "";
                 if (suc != AppState.SucursalActiva) continue;
                 var fechaObj = Sql.DocumentosCObj.ObtenerItem("fecha", id);
@@ -137,6 +145,10 @@ namespace SistemaGestion
             var lista = new List<CorreccionFila>();
             int linea = 1;
             double totalCant = 0;
+            // Fila más reciente del listado: es la que queda seleccionada al terminar
+            // de cargar (ver SeleccionarFilaMasReciente).
+            DateTime fechaMax = DateTime.MinValue;
+            CorreccionFila? filaMasReciente = null;
             string busqueda  = _modoFiltro == "busquedas" ? TxtBuscar.Text.Trim().ToLower() : "";
             string mesFiltro = _modoFiltro == "filtros"   ? _mesActivo : "";
             string tipoMov = ObtenerFiltroTipo();
@@ -189,6 +201,9 @@ namespace SistemaGestion
                     UsuarioCreador = Sql.DocumentosCObj.ObtenerItem("usuario", id)?.ToString() ?? "",
                     CantidadTotal = cant
                 });
+
+                if (fechaDoc >= fechaMax) { fechaMax = fechaDoc; filaMasReciente = lista[^1]; }
+
                 totalCant += cant;
             }
 
@@ -211,6 +226,19 @@ namespace SistemaGestion
                 : $"{_mesActivo} {año}";
 
             OcultarDetalle();
+            SeleccionarFilaMasReciente(filaMasReciente);
+        }
+
+        // ─── Selección inicial del grid ───────────────────────────────────────
+        // Al asignar ItemsSource, WPF deja seleccionada la PRIMERA fila (el
+        // CurrentItem del CollectionView). Se prefiere la MÁS RECIENTE por fecha.
+        // Las selecciones explícitas de guardar/editar/eliminar corren DESPUÉS de
+        // CargarCorrecciones(), así que siguen ganando sobre ésta.
+        private void SeleccionarFilaMasReciente(CorreccionFila? fila)
+        {
+            if (fila == null) return;
+            Grid1.SelectedItem = fila;
+            Grid1.ScrollIntoView(fila);
         }
 
         private string ObtenerFiltroTipo()

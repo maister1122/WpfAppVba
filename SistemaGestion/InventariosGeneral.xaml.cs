@@ -62,6 +62,20 @@ namespace SistemaGestion
             }
 
             Grid1.ItemsSource = lista;
+            SeleccionarFilaMasReciente(lista);
+        }
+
+        // ─── Selección inicial del grid ───────────────────────────────────────
+        // Al asignar ItemsSource, WPF deja seleccionada la PRIMERA fila (el
+        // CurrentItem del CollectionView). Se prefiere la MÁS RECIENTE por fecha.
+        // Las selecciones explícitas de guardar/editar/eliminar corren DESPUÉS de
+        // CargarInventarios(), así que siguen ganando sobre ésta.
+        private void SeleccionarFilaMasReciente(List<InventarioFila> lista)
+        {
+            if (lista.Count == 0) return;
+            var fila = lista.Aggregate((a, b) => b.Fecha >= a.Fecha ? b : a);
+            Grid1.SelectedItem = fila;
+            Grid1.ScrollIntoView(fila);
         }
 
         // ─── Helpers de actualización incremental del Grid1 ───────────────────

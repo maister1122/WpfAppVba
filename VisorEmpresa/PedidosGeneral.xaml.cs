@@ -164,6 +164,13 @@ namespace VisorEmpresa
                     Sql.DocumentosPObj.ObtenerItem("sucursal", id)?.ToString() != _sucursalFiltro)
                     continue;
 
+                // MISMO filtro de movimiento que CargarPedidos: sin esto, la sección
+                // Compras arma el árbol con los meses de las ventas y queda el árbol
+                // lleno con el grid vacío.
+                string movDoc = Sql.DocumentosPObj.ObtenerItem("movimiento", id)?.ToString() ?? "";
+                if (!string.IsNullOrEmpty(ObtenerFiltroTipo()) &&
+                    !string.Equals(movDoc, ObtenerFiltroTipo(), StringComparison.OrdinalIgnoreCase)) continue;
+
                 var fechaObj = Sql.DocumentosPObj.ObtenerItem("fecha", id);
                 if (fechaObj == null) continue;
                 mesesConDatos.Add(Convert.ToDateTime(fechaObj).Month);
@@ -230,6 +237,10 @@ namespace VisorEmpresa
             var lista = new List<PedidoFila>();
             int linea = 1;
             double totalCant = 0, totalImporte = 0;
+            // Fila más reciente del listado: es la que queda seleccionada al terminar
+            // de cargar (ver SeleccionarFilaMasReciente).
+            DateTime fechaMax = DateTime.MinValue;
+            PedidoFila? filaMasReciente = null;
 
             string filtroEstado  = ObtenerFiltroEstado();
             string filtroCuenta  = ObtenerFiltroCuenta();
@@ -311,6 +322,8 @@ namespace VisorEmpresa
                     Importe      = importe
                 });
 
+                if (fechaDoc >= fechaMax) { fechaMax = fechaDoc; filaMasReciente = lista[^1]; }
+
                 totalCant    += cant;
                 totalImporte += importe;
             }
@@ -338,6 +351,7 @@ namespace VisorEmpresa
 
             // Ocultar el panel de detalle al recargar
             OcultarDetalle();
+            SeleccionarFilaMasReciente(filaMasReciente);
         }
 
         // ─── Filtros ──────────────────────────────────────────────────────────
@@ -359,6 +373,16 @@ namespace VisorEmpresa
 
         // El movimiento lo fija la sección del panel lateral; vacío = los dos juntos.
         private string ObtenerFiltroTipo() => TipoMovimiento;
+
+        // ─── Selección inicial del grid ───────────────────────────────────────
+        // Al asignar ItemsSource, WPF deja seleccionada la PRIMERA fila (el
+        // CurrentItem del CollectionView). Se prefiere la MÁS RECIENTE por fecha.
+        private void SeleccionarFilaMasReciente(PedidoFila? fila)
+        {
+            if (fila == null) return;
+            Grid1.SelectedItem = fila;
+            Grid1.ScrollIntoView(fila);
+        }
 
         // ─── Nombre de mes ────────────────────────────────────────────────────
         private static string ObtenerNombreMes(int mes)

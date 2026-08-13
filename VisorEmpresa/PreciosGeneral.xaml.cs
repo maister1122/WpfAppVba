@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -249,6 +249,18 @@ namespace VisorEmpresa
                 : _mesActivo == 0 ? _añoActivo.ToString() : $"{ObtenerNombreMes(_mesActivo)} {_añoActivo}";
 
             OcultarDetalle();
+            SeleccionarFilaMasReciente(lista);
+        }
+
+        // ─── Selección inicial del grid ───────────────────────────────────────
+        // Al asignar ItemsSource, WPF deja seleccionada la PRIMERA fila (el
+        // CurrentItem del CollectionView). Se prefiere la MÁS RECIENTE por fecha.
+        private void SeleccionarFilaMasReciente(List<PrecioListaFila> lista)
+        {
+            if (lista.Count == 0) return;
+            var fila = lista.Aggregate((a, b) => b.Fecha >= a.Fecha ? b : a);
+            Grid1.SelectedItem = fila;
+            Grid1.ScrollIntoView(fila);
         }
 
         // ─── Filtros ──────────────────────────────────────────────────────────

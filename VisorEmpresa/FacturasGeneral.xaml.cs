@@ -160,6 +160,13 @@ namespace VisorEmpresa
                     Sql.DocumentosFObj.ObtenerItem("sucursal", id)?.ToString() != _sucursalFiltro)
                     continue;
 
+                // MISMO filtro de movimiento que CargarFacturas: sin esto, la sección
+                // Egresos arma el árbol con los meses de los ingresos (y al revés),
+                // quedando el árbol lleno con el grid vacío.
+                string movArbol = NormalizarMovimiento(Sql.DocumentosFObj.ObtenerItem("movimiento", id)?.ToString());
+                if (!string.IsNullOrEmpty(ObtenerFiltroTipo()) &&
+                    !string.Equals(movArbol, ObtenerFiltroTipo(), StringComparison.OrdinalIgnoreCase)) continue;
+
                 var fechaObj = Sql.DocumentosFObj.ObtenerItem("fecha", id);
                 if (fechaObj == null) continue;
                 mesesConDatos.Add(Convert.ToDateTime(fechaObj).Month);
@@ -220,6 +227,10 @@ namespace VisorEmpresa
             var lista = new List<FacturaFila>();
             int linea = 1;
             double totalMonto = 0;
+            // Fila más reciente del listado: es la que queda seleccionada al terminar
+            // de cargar (ver SeleccionarFilaMasReciente).
+            DateTime fechaMax = DateTime.MinValue;
+            FacturaFila? filaMasReciente = null;
             string busqueda  = _modoFiltro == "busquedas" ? TxtBuscar.Text.Trim().ToLower() : "";
             string mesFiltro = _modoFiltro == "filtros"   ? _mesActivo : "";
             string filtroEstado = ObtenerFiltroEstado();
@@ -303,6 +314,9 @@ namespace VisorEmpresa
                     Estado       = estado,
                     EstadoC      = estadoC
                 });
+
+                if (fechaDoc >= fechaMax) { fechaMax = fechaDoc; filaMasReciente = lista[^1]; }
+
                 totalMonto += monto;
             }
 
@@ -317,6 +331,7 @@ namespace VisorEmpresa
                 : $"{_mesActivo} {año}";
 
             OcultarDetalle();
+            SeleccionarFilaMasReciente(filaMasReciente);
         }
 
         // ─── Filtros ──────────────────────────────────────────────────────────
@@ -343,6 +358,16 @@ namespace VisorEmpresa
 
         // El movimiento lo fija la sección del panel lateral; vacío = los dos juntos.
         private string ObtenerFiltroTipo() => TipoMovimiento;
+
+        // ─── Selección inicial del grid ───────────────────────────────────────
+        // Al asignar ItemsSource, WPF deja seleccionada la PRIMERA fila (el
+        // CurrentItem del CollectionView). Se prefiere la MÁS RECIENTE por fecha.
+        private void SeleccionarFilaMasReciente(FacturaFila? fila)
+        {
+            if (fila == null) return;
+            Grid1.SelectedItem = fila;
+            Grid1.ScrollIntoView(fila);
+        }
 
         /// <summary>
         /// Movimiento de una factura, normalizado a "ingreso"/"egreso". Las

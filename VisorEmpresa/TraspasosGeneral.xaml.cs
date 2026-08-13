@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -226,6 +226,10 @@ namespace VisorEmpresa
             var lista = new List<TraspasoFila>();
             int linea = 1;
             double totalCant = 0;
+            // Fila más reciente del listado: es la que queda seleccionada al terminar
+            // de cargar (ver SeleccionarFilaMasReciente).
+            DateTime fechaMax = DateTime.MinValue;
+            TraspasoFila? filaMasReciente = null;
             string filtroEstado = ObtenerFiltroEstado();
             string busqueda  = _modoFiltro == "busquedas" ? TxtBuscar.Text.Trim().ToLower() : "";
             string mesFiltro = _modoFiltro == "filtros"   ? _mesActivo : "";
@@ -287,6 +291,9 @@ namespace VisorEmpresa
                     Estado       = estado,
                     Cantidad     = cant
                 });
+
+                if (fechaDoc >= fechaMax) { fechaMax = fechaDoc; filaMasReciente = lista[^1]; }
+
                 totalCant += cant;
             }
 
@@ -303,6 +310,7 @@ namespace VisorEmpresa
 
             // Limpiar el panel de detalle al recargar
             OcultarDetalle();
+            SeleccionarFilaMasReciente(filaMasReciente);
         }
 
         // ─── Filtro de estado: solo pendiente/entregado ───────────────────────
@@ -326,6 +334,16 @@ namespace VisorEmpresa
         //     Ambos combos fijados  → el documento debe cumplir los dos.
         //     Solo uno fijado       → el documento debe cumplir ese lado.
         //     Ninguno fijado        → toda la empresa, sin filtro.
+        // ─── Selección inicial del grid ───────────────────────────────────────
+        // Al asignar ItemsSource, WPF deja seleccionada la PRIMERA fila (el
+        // CurrentItem del CollectionView). Se prefiere la MÁS RECIENTE por fecha.
+        private void SeleccionarFilaMasReciente(TraspasoFila? fila)
+        {
+            if (fila == null) return;
+            Grid1.SelectedItem = fila;
+            Grid1.ScrollIntoView(fila);
+        }
+
         private bool CumpleFiltroOrigenDestino(string documentoT)
         {
             bool porOrigen  = !string.IsNullOrEmpty(_origenFiltro);

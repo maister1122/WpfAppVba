@@ -62,6 +62,14 @@ namespace SistemaGestion
                 var idObj = Sql.DocumentosPObj.Mover(i);
                 if (idObj == null) continue;
                 string id = idObj.ToString()!;
+
+                // MISMO filtro de movimiento que CargarPedidos: sin esto, la sección
+                // Compras arma el árbol con los meses de las ventas y queda el árbol
+                // lleno con el grid vacío.
+                string movDoc = Sql.DocumentosPObj.ObtenerItem("movimiento", id)?.ToString() ?? "";
+                if (!string.IsNullOrEmpty(ObtenerFiltroTipo()) &&
+                    !string.Equals(movDoc, ObtenerFiltroTipo(), StringComparison.OrdinalIgnoreCase)) continue;
+
                 string sucursal = Sql.DocumentosPObj.ObtenerItem("sucursal", id)?.ToString() ?? "";
                 if (sucursal != AppState.SucursalActiva) continue;
                 var fechaObj = Sql.DocumentosPObj.ObtenerItem("fecha", id);
@@ -130,6 +138,10 @@ namespace SistemaGestion
             var lista = new List<PedidoFila>();
             int linea = 1;
             double totalCant = 0, totalImporte = 0;
+            // Fila más reciente del listado: es la que queda seleccionada al terminar
+            // de cargar (ver SeleccionarFilaMasReciente).
+            DateTime fechaMax = DateTime.MinValue;
+            PedidoFila? filaMasReciente = null;
 
             string filtroEstado  = ObtenerFiltroEstado();
             string filtroCuenta  = ObtenerFiltroCuenta();
@@ -208,6 +220,8 @@ namespace SistemaGestion
                     Importe     = importe
                 });
 
+                if (fechaDoc >= fechaMax) { fechaMax = fechaDoc; filaMasReciente = lista[^1]; }
+
                 totalCant    += cant;
                 totalImporte += importe;
             }
@@ -237,6 +251,20 @@ namespace SistemaGestion
 
             // Ocultar el panel de detalle al recargar
             OcultarDetalle();
+            SeleccionarFilaMasReciente(filaMasReciente);
+        }
+
+        // ─── Selección inicial del grid ───────────────────────────────────────
+        // Al asignar ItemsSource, WPF deja seleccionada la PRIMERA fila (el
+        // CurrentItem del CollectionView). Se prefiere la MÁS RECIENTE por fecha:
+        // es el documento que el usuario acaba de cargar y el que va a mirar.
+        // Las selecciones explícitas de guardar/editar/eliminar corren DESPUÉS de
+        // CargarPedidos(), así que siguen ganando sobre ésta.
+        private void SeleccionarFilaMasReciente(PedidoFila? fila)
+        {
+            if (fila == null) return;
+            Grid1.SelectedItem = fila;
+            Grid1.ScrollIntoView(fila);
         }
 
         // ─── Filtros ──────────────────────────────────────────────────────────

@@ -70,6 +70,19 @@ namespace SistemaGestion
                 var idObj = Sql.DocumentosTObj.Mover(i);
                 if (idObj == null) continue;
                 string id = idObj.ToString()!;
+
+                // MISMO filtro que CargarTraspasos (sucursal activa + dirección): sin
+                // esto el árbol arma los meses con TODOS los traspasos de la base, y
+                // una sección sin documentos queda con el árbol lleno y el grid vacío.
+                string origen  = Sql.DocumentosTObj.ObtenerItem("origen",  id)?.ToString() ?? "";
+                string destino = Sql.DocumentosTObj.ObtenerItem("destino", id)?.ToString() ?? "";
+                bool esSalida  = origen  == AppState.SucursalActiva;
+                bool esEntrada = destino == AppState.SucursalActiva;
+                string tipoMovArbol = ObtenerFiltroTipo();
+                if (tipoMovArbol == "salida")       { if (!esSalida)  continue; }
+                else if (tipoMovArbol == "entrada") { if (!esEntrada) continue; }
+                else if (!esSalida && !esEntrada)   continue;
+
                 var fechaObj = Sql.DocumentosTObj.ObtenerItem("fecha", id);
                 if (fechaObj == null) continue;
                 mesesConDatos.Add(Convert.ToDateTime(fechaObj).Month);
@@ -135,6 +148,10 @@ namespace SistemaGestion
             var lista = new List<TraspasoFila>();
             int linea = 1;
             double totalCant = 0;
+            // Fila más reciente del listado: es la que queda seleccionada al terminar
+            // de cargar (ver SeleccionarFilaMasReciente).
+            DateTime fechaMax = DateTime.MinValue;
+            TraspasoFila? filaMasReciente = null;
             string filtroEstado = ObtenerFiltroEstado();
             // Cada modo aplica solo su propio filtro de contenido (igual que VBA llaveActualisar)
             string busqueda  = _modoFiltro == "busquedas" ? TxtBuscar.Text.Trim().ToLower() : "";
@@ -220,6 +237,9 @@ namespace SistemaGestion
                     UsuarioCreador  = Sql.DocumentosTObj.ObtenerItem("usuario", id)?.ToString() ?? "",
                     Cantidad        = cant
                 });
+
+                if (fechaDoc >= fechaMax) { fechaMax = fechaDoc; filaMasReciente = lista[^1]; }
+
                 totalCant += cant;
             }
 
@@ -243,6 +263,19 @@ namespace SistemaGestion
 
             // Limpiar el panel de detalle al recargar
             OcultarDetalle();
+            SeleccionarFilaMasReciente(filaMasReciente);
+        }
+
+        // ─── Selección inicial del grid ───────────────────────────────────────
+        // Al asignar ItemsSource, WPF deja seleccionada la PRIMERA fila (el
+        // CurrentItem del CollectionView). Se prefiere la MÁS RECIENTE por fecha.
+        // Las selecciones explícitas de guardar/editar/eliminar corren DESPUÉS de
+        // CargarTraspasos(), así que siguen ganando sobre ésta.
+        private void SeleccionarFilaMasReciente(TraspasoFila? fila)
+        {
+            if (fila == null) return;
+            Grid1.SelectedItem = fila;
+            Grid1.ScrollIntoView(fila);
         }
 
         private string ObtenerFiltroTipo()
