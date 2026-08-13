@@ -1,7 +1,7 @@
 # Estructura de la base de datos — `edberBase`
 
-> Generado a partir del script SQL Server provisto por el usuario (`script2.sql`,
-> fecha de script 28/07/2026). Refleja el estado real de la base, no una
+> Generado a partir del script SQL Server provisto por el usuario (`script.sql`,
+> fecha de script 13/08/2026). Refleja el estado real de la base, no una
 > suposición del código — ante cualquier diferencia, este archivo debe
 > actualizarse con el próximo `script.sql` que se comparta, junto con
 > `SistemaGestion/EsquemaValidator.cs` y `VisorEmpresa/EsquemaValidator.cs`
@@ -10,11 +10,12 @@
 ## Convenciones generales
 
 - **Motor**: SQL Server (compatibility level 160). Cada tabla es `PRIMARY KEY`
-  sobre `id`, la mayoría `NONCLUSTERED` (algunas — `documentosL`, `facturas` —
-  son `CLUSTERED`).
+  sobre `id`, la mayoría `NONCLUSTERED` (cuatro — `documentosF`, `documentosL`,
+  `facturas`, `transaccionesF` — son `CLUSTERED`).
 - **`id`** — `uniqueidentifier NOT NULL`, en todas las tablas. Default `newid()`
-  vía constraint `DF_<tabla>_id` (excepto `usuarios`, que no tiene ese default
-  explícito en el script — igual se genera el GUID desde la app).
+  vía constraint `DF_<tabla>_id`, en las 26 sin excepción. Dos constraints
+  conservan el nombre de la tabla vieja: `appsheets` usa `DF_stocks_id` y
+  `transaccionesP` usa `DF_transacciones_id`.
 - **`estadof`** — `nvarchar(100) NULL`, en todas las tablas. Estado lógico
   interno de la fila: `normal` / `nuevo` / `editado` / `ocultado` / `eliminado`.
   La app **nunca hace `DELETE` físico** en el flujo normal — todo borrado es
@@ -230,6 +231,39 @@ de Pedidos. Las facturas vuelven a ser un documento propio.
     base y se siguen editando** en sus pantallas de mantenimiento; ya no
     intervienen en el código de ningún documento.
 
+## Cambios respecto a la versión anterior de este documento (sesión 2026-08-13)
+
+Cotejo columna por columna del script del 13/08/2026 contra este documento y
+contra el manifiesto de `EsquemaValidator`. **La base es compatible con la app**:
+las 25 tablas del manifiesto existen con todas sus columnas (0 problemas). Lo
+que cambió es la documentación, no el esquema:
+
+- **`facturas.monto`** (`float`): existe en la base desde `ab4844d` y el código
+  la usa en los dos proyectos (`FacturasDetalle`, `FacturasGeneral`), pero no
+  estaba ni en este documento ni en el manifiesto. **Se agregó al manifiesto de
+  `EsquemaValidator` en ambos proyectos**: sin eso, una base sin esa columna
+  pasaba la validación y después fallaba en silencio (`ObtenerItem` devuelve
+  `null` y `EstablecerItem` es un no-op cuando la columna no existe), mostrando
+  el monto facturado en 0 y sin guardarlo.
+- **`facturas.estado`**: este documento la listaba como "sin uso"; **ya no
+  existe en la base**. Ningún código la referencia.
+- **Default de `id`**: las 26 tablas tienen su `DEFAULT (newid())`. La excepción
+  que este documento anotaba para `usuarios` ya no corre.
+- **PK `CLUSTERED`**: son cuatro (`documentosF`, `documentosL`, `facturas`,
+  `transaccionesF`), no dos.
+- **`documentosC.movimiento` y `documentosP.movimiento`**: son `nvarchar(100)`,
+  no `nvarchar(255)` como decía este documento. Sin impacto (los valores son
+  "venta"/"compra", "repuesta"/"retirado").
+- **`documentosP.estadoA`, `pedidos.forma` y `pedidos.contable`** siguen en la
+  base y siguen sin uso en el código — se pueden `DROP COLUMN` cuando se quiera.
+  El `DROP` de `pedidos.forma`/`contable` que este documento daba por hecho en
+  la sesión 2026-07-24 nunca llegó a correrse.
+
+Opciones de la base que conviene tener presentes (del mismo script):
+`RECOVERY SIMPLE` (sin recuperación punto-en-el-tiempo: se depende del último
+full backup), `FILEGROWTH = 1024KB` en el `.mdf`, y **ni un solo índice fuera de
+las PK, ni `FOREIGN KEY`, vistas, procedimientos o triggers** en toda la base.
+
 ## Tablas
 
 ### `appsheets`
@@ -306,7 +340,7 @@ Cabecera de correcciones de stock.
 | edicion     | datetime            | sí   |
 | referencia  | nvarchar(255)       | sí   |
 | estadof     | nvarchar(100)       | sí   |
-| movimiento  | nvarchar(255)       | sí   |
+| movimiento  | nvarchar(100)       | sí   |
 | observacion | nvarchar(255)       | sí   |
 | motivo      | nvarchar(255)       | sí   |
 | codigo      | nvarchar(100)       | sí   |
@@ -389,7 +423,7 @@ Cabecera de pedidos (ventas/compras).
 | edicion     | datetime            | sí   | |
 | referencia  | nvarchar(255)       | sí   | |
 | estadof     | nvarchar(100)       | sí   | |
-| movimiento  | nvarchar(255)       | sí   | |
+| movimiento  | nvarchar(100)       | sí   | |
 | observacion | nvarchar(255)       | sí   | |
 | estadoC     | nvarchar(100)       | sí   | "pendiente"/"cancelado"/"pendiente parcial" — estado de cuenta |
 | estadoA     | nvarchar(100)       | sí   | **sin uso** — quedó de la pestaña "Facturas del pedido" (eliminada); se puede `DROP COLUMN` |
@@ -457,11 +491,11 @@ Líneas de `documentosF`.
 | id          | uniqueidentifier    | NO   | |
 | indice      | int                 | sí   | |
 | concepto    | nvarchar(255)       | sí   | |
-| importe     | float               | sí   | |
+| importe     | float               | sí   | lo que corresponde según el pedido |
+| monto       | float               | sí   | lo efectivamente facturado — es la columna que muestra el grid |
 | estadof     | nvarchar(100)       | sí   | |
 | documentoF  | uniqueidentifier    | sí   | FK → documentosF |
 | categoria   | uniqueidentifier    | sí   | FK → categorias |
-| estado      | nvarchar(100)       | sí   | **sin uso** — quedó de la pestaña "Facturas del pedido" (eliminada) |
 
 ### `familias`
 

@@ -33,8 +33,9 @@ namespace VisorEmpresa.Data
     /// usuario), no una suposición — así que ya no debería haber falsos positivos
     /// de columnas "faltantes" que en realidad nunca existieron a propósito (ej.
     /// usuarios no tiene usuario/usuarioE, documentosT no tiene movimiento/sucursal).
-    /// Sincronizado contra script.sql del 24/07/2026 (agregó emision/edicion a
-    /// usuarios; ya no tiene la columna secuencia en ninguna tabla).
+    /// Sincronizado contra script.sql del 13/08/2026 (agregó facturas.monto;
+    /// facturas.estado ya no existe). Validado columna por columna contra ese
+    /// script: las 25 tablas del manifiesto y todas sus columnas están presentes.
     /// </summary>
     public static class EsquemaValidator
     {
@@ -74,7 +75,7 @@ namespace VisorEmpresa.Data
             ["documentosC"]    = new[] { "fecha", "emision", "edicion", "referencia", "movimiento", "observacion", "motivo", "codigo", "sucursal", "usuario", "usuarioE" },
             ["correcciones"]   = new[] { "indice", "cantidad", "documentoC", "articulo" },
             ["documentosF"]    = new[] { "codigo", "fecha", "emision", "edicion", "observacion", "referencia", "sucursal", "usuario", "usuarioE", "estado", "estadoC", "movimiento", "tercero", "relacion" },
-            ["facturas"]       = new[] { "indice", "concepto", "importe", "documentoF", "categoria" },
+            ["facturas"]       = new[] { "indice", "concepto", "importe", "monto", "documentoF", "categoria" },
             ["transaccionesF"] = new[] { "fecha", "descripcion", "indice", "importe", "forma", "documentoF" },
         };
 
