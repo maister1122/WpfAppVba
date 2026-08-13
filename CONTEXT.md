@@ -249,7 +249,10 @@ Servicio server-side mínimo (`ConexionBroker/`, ASP.NET Core Minimal API, `.NET
 ### Alta prioridad
 - [x] **CorreccionesDetalle → lógica de pestañas**: migrado a UserControl con `Cerrando` + `IntentarCerrar`; selectores usan `OpenAsTab`.
 - [x] **ArticulosDetalle → lógica de pestañas**: migrado a UserControl con `Cerrando` + `IntentarCerrar`; selectores usan `OpenAsTab`.
-- [ ] **Reinstalar el `Setup.exe` nuevo una vez en cada PC** (releases `v1.0.8`/`visor-v1.0.5`, ya publicadas desde el repo nuevo) — sesión 2026-08-11/12. Las apps instaladas antes de la mudanza buscan updates en `jhoelmaister/wpfappvba`, que está compilado adentro del binario y no se puede redirigir a distancia. Hasta que no se reinstale, esa PC no recibe ninguna actualización.
+- [x] ~~**Reinstalar el `Setup.exe` nuevo una vez en cada PC**~~ (releases `v1.0.8`/`visor-v1.0.5`) — hecho por el usuario, confirmado en sesión 2026-08-13. Las apps instaladas antes de la mudanza buscaban updates en `jhoelmaister/wpfappvba`, compilado adentro del binario e imposible de redirigir a distancia; la reinstalación era la única salida.
+- [ ] **Publicar la `1.0.9` (visor: `1.0.6`) y confirmar que aparece el botón 🔄 en las PCs** — es la prueba de punta a punta de que la mudanza de cuenta quedó cerrada: recién ahí se comprueba que las apps reinstaladas leen el feed del repo nuevo. Sesión 2026-08-13.
+- [ ] **Borrar el repo viejo `jhoelmaister/wpfappvba` en GitHub** — dejarlo unos días por si alguna PC quedó sin reinstalar. No rompe el login (el broker es aparte), pero esa PC perdería toda posibilidad de actualizarse. Sesión 2026-08-13.
+- [ ] **Desinstalar la GitHub App de Claude de la cuenta vieja** (Settings → Applications) — higiene, sin apuro. Ya está instalada en `maister1122`. Sesión 2026-08-13.
 - [ ] Verificar compilación y prueba completa del sistema (no hay herramientas de build en el entorno cloud — debe hacerse en máquina local).
 - [ ] Verificar en máquina local el catálogo editable nuevo de VisorEmpresa (Familias/Productos/Industrias/Categorías + Articulos) — sesión 2026-07-20, sin compilar en la nube.
 - [ ] Confirmar con el usuario el criterio de `estadoV` (opt-out vs opt-in) tras probarlo — sesión 2026-07-20.
@@ -278,8 +281,61 @@ Servicio server-side mínimo (`ConexionBroker/`, ASP.NET Core Minimal API, `.NET
 - **`CorreccionesDetalle` ya es pestaña**: usa `OpenAsTab` de ArticulosGeneral para buscar artículos, igual que Pedidos/Traspasos.
 - **El feed de actualización es una constante compilada, no una configuración**: `ActualizadorApp.RepoUrl` (y `AuthBrokerClient.BrokerUrl`) viven dentro del `.exe`. Cambiarlos exige publicar una versión nueva Y que cada PC la reciba — y si lo que cambió es justamente la URL del feed, las apps ya instaladas no pueden auto-actualizarse a ella: hay que reinstalar a mano una vez (fue el caso de la mudanza de cuenta, sesión 2026-08-11/12).
 - **El número de versión solo sube, y los releases no se migran con git**: al mover el repo viajaron los tags pero ninguna release (son artefactos de GitHub, no de git). Antes de publicar, mirar qué releases existen en el repo destino — no alcanza con mirar los tags.
+- **Desde la sesión web NO se llega al VPS**: la política de red del contenedor solo habilita GitHub y los registries de paquetes. No hay cliente `ssh` instalado, no hay claves en `~/.ssh/`, el puerto 22 de `179.197.71.81` es inalcanzable y el proxy responde `403 to CONNECT` para `conexion.jhoelmaister.tech:443`. Todo chequeo del VPS (remote del clon, estado del servicio, `ping` del broker) lo tiene que correr el usuario por SSH y pegar la salida — verificado en sesión 2026-08-13.
+- **`conexion.jhoelmaister.tech` NO es la cuenta de GitHub vieja**: es el dominio propio en Hostinger apuntando al VPS, independiente de GitHub. Que contenga la cadena `jhoelmaister` hace que aparezca en cualquier `git grep` de rastros de la cuenta vieja y da un falso positivo. **No tocar `AuthBrokerClient.BrokerUrl`**: cambiarlo deja a las dos apps sin poder loguear.
 
 ## Historial de Cambios por Sesión
+
+### Sesión 2026-08-13 — Cierre y auditoría de la migración de cuenta: barrido completo de rastros de `jhoelmaister`, verificación de los dos clones (VPS y PC) y de los tokens; ningún cambio de código (rama `master`)
+
+> Sesión de verificación pura, sin una sola línea de código tocada. El pedido inicial fue *"quiero saber qué pendientes tengo para terminar la migración"* y derivó en *"me preocupa que algo tenga alguna relación con mi anterior cuenta jhoelmaister"*. Se auditó todo el circuito y quedó confirmado que no queda ningún vínculo con la cuenta vieja. Único cambio del repo: esta actualización de `CONTEXT.md`.
+
+#### Estado de la migración al arrancar la sesión: todo lo técnico ya estaba hecho
+Verificado contra el estado real (no contra la documentación):
+- Repo **público** (`visibility: public` por API) y **Actions habilitadas** (2 releases con conclusión `success`).
+- `git grep -niI "jhoelmaister/wpfappvba" -- '*.cs' '*.yml'` → **vacío**. Los 4 archivos del checklist + `publicar.ps1` apuntan a `maister1122/WpfAppVba`.
+- `origin/master` = `cecf3c1`, con los 3 commits de la mudanza adentro.
+- Releases `v1.0.8` y `visor-v1.0.5` publicadas con sus `Setup.exe`, `.nupkg` y feeds.
+- **El único pendiente real era la reinstalación manual en cada PC** — y el `download_count` de los dos `Setup.exe` estaba en **0**, o sea que todavía no se había bajado en ninguna máquina. El usuario la completó durante esta sesión.
+
+#### Auditoría de rastros de la cuenta vieja (el pedido central)
+Se barrió el repo entero, no solo los archivos del checklist:
+
+| Qué se revisó | Resultado |
+|---|---|
+| `git grep -i "jhoelmaister"` en **todo** el repo | Solo el dominio del broker + docs históricas |
+| `ActualizadorApp.cs` (×2), workflows (4 líneas), `publicar.ps1`, `git remote` | `maister1122/WpfAppVba` ✅ |
+| Contenido de `.github/` | Solo los 2 workflows — sin `CODEOWNERS`, `FUNDING.yml` ni `dependabot.yml` |
+| Metadata de los `.csproj` | Sin `Authors`/`Company`/`RepositoryUrl`/`PackageProjectUrl` — nada que arrastre la cuenta |
+| `NuGet.config` / fuentes privadas | No existe |
+| Tokens hardcodeados | Ninguno — `publicar.ps1` lee de `$env:GITHUB_TOKEN` |
+| Feed real que leen las apps | `releases.win.json` descargado: JSON válido, apunta a `SistemaGestion-1.0.8-full.nupkg` |
+
+Las únicas menciones a `github.com/jhoelmaister/...` que quedan están en `MIGRACION-CUENTA-NUEVA.md` y en el historial de este archivo: son documentación que **describe** la mudanza y tiene que nombrar la cuenta vieja para explicarse. No las lee ningún programa.
+
+#### El falso positivo que motivó la consulta: dominio ≠ cuenta
+`SistemaGestion/AuthBrokerClient.cs` y `VisorEmpresa/AuthBrokerClient.cs` siguen diciendo `https://conexion.jhoelmaister.tech`, y eso **está bien**. Es el dominio propio en Hostinger que apunta al VPS `179.197.71.81`, sin ninguna relación con GitHub: si mañana se borra la cuenta `jhoelmaister` de GitHub, el broker sigue funcionando igual. Cambiar esa constante dejaría a las dos apps sin poder loguear. Anotado también en "Problemas Conocidos" para que no vuelva a generar la duda.
+
+#### Verificación del clon del VPS (corrida por el usuario, por SSH)
+La sesión web no llega al VPS (ver "Problemas Conocidos"), así que se le pasó al usuario un bloque de comandos con veredicto automático. Resultado:
+- **Remote**: `https://github.com/maister1122/WpfAppVba.git` ✅ — el re-apuntado de la sesión anterior quedó firme.
+- **Estado**: `742f56c`, 1 commit atrás de `origin/master` (`cecf3c1`). Se verificó qué trae ese commit: `CONTEXT.md | 37 +++`, **un solo archivo de documentación**. No toca `ConexionBroker/`, así que **no hubo que republicar ni reiniciar el broker**.
+- **Respaldos con credenciales**: ninguno, y `git status --porcelain` vacío — el `.gitignore` endurecido en `742f56c` está haciendo su trabajo.
+- **Servicio**: `conexionbroker` y `caddy` en `enabled`/`active` los dos, y `curl http://127.0.0.1:5080/ping` → **200**.
+
+#### Verificación del clon local de Windows (un hueco que el checklist no cubría)
+Se había auditado el clon del VPS pero no el de la PC del usuario, que es donde compila en Visual Studio. Resultado en `C:\Users\jhoel\source\repos\maister1122\WpfAppVba`:
+- **Remote**: `https://github.com/maister1122/WpfAppVba` ✅, árbol de trabajo limpio, `[behind 1]` (el mismo commit de docs).
+- **Acá el `git pull` sí importa** (a diferencia del VPS): el commit que falta modifica `CONTEXT.md`, justo el archivo que el usuario edita a mano al cerrar cada sesión. Editarlo estando en `742f56c` y commitear habría producido un conflicto de merge.
+- El usuario además **borró la carpeta del clon viejo** (`jhoelmaister/wpfappvba`) de su PC, para que Visual Studio dejara de listar dos repos. Nada que recuperar: todo el proyecto vive en `master` en GitHub.
+
+#### Tokens: no había ninguno
+`echo $env:GITHUB_TOKEN` en la PC del usuario → **vacío**. No existía ningún PAT de la cuenta vieja guardado. Igual era un riesgo teórico: `publicar.ps1` (el camino manual) es el único que necesita PAT, y el flujo real de publicación es **GitHub Actions**, que usa el `secrets.GITHUB_TOKEN` automático de cada corrida. Un PAT viejo tampoco sería un riesgo de seguridad sobre el repo nuevo — no tiene ningún permiso ahí; el único síntoma posible sería un 403.
+
+#### Lo que queda abierto
+- **Publicar la `1.0.9` / `visor-1.0.6`** — es la prueba de punta a punta: recién cuando aparezca el botón 🔄 en las PCs reinstaladas queda demostrado que leen el feed del repo nuevo. Ojo: `1.0.8` y `1.0.5` ya están consumidas como release en este repo, los `.csproj` siguen en esos números.
+- **Borrar el repo viejo en GitHub** — esperar unos días por si alguna PC quedó sin reinstalar.
+- **Desinstalar la GitHub App de Claude de la cuenta vieja** — higiene.
 
 ### Sesión 2026-08-11/12 — Migración del repo a la cuenta de GitHub `maister1122`: URL del feed de auto-actualización en código, workflows y `publicar.ps1`; primeras releases desde el repo nuevo; clon del VPS re-apuntado; `.gitignore` endurecido contra respaldos de credenciales (rama `master`)
 
