@@ -241,6 +241,7 @@ Servicio server-side mínimo (`ConexionBroker/`, ASP.NET Core Minimal API, `.NET
 - **Archivos borrados por completo** (los dos proyectos): `ConexionConfig.cs`, `ConfiguracionDbWindow.xaml(.cs)`, `ConexionServidoresWindow.xaml(.cs)`.
 - **Infraestructura real ya desplegada y funcionando en producción**: VPS Ubuntu 24.04 (`179.197.71.81`, el mismo donde corre SQL Server 2022 para Linux), dominio `conexion.jhoelmaister.tech` (DNS en Hostinger), servicio `systemd` (`conexionbroker.service`, puerto local `5080`) detrás de `Caddy` (HTTPS automático vía Let's Encrypt). Documentación completa paso a paso, con los 3 bugs reales que aparecieron durante el despliegue (using faltante, archivo de config en la carpeta equivocada, `InvariantGlobalization` incompatible con `Microsoft.Data.SqlClient`) y cómo actualizar el broker cuando cambia el código: **`DESPLIEGUE-CONEXIONBROKER.md`** (raíz del repo) y `ConexionBroker/README.md` (guía genérica reusable).
 - **Seguridad**: se descartó embeber la credencial real en el binario de la app (el repo es público, necesario para que Velopack lea releases sin token — se podría decompilar) y también mover el repo a privado (rompería ese mismo mecanismo). El broker resuelve esto sin ninguno de esos dos costados: la credencial real de SQL Server no viaja nunca a las PCs de los empleados, ni en disco ni en el binario — solo el broker (bajo control directo del dueño, en su propio VPS) la conoce.
+- **El clon del VPS es un checkout normal del repo** (`~/WpfAppVba`, `origin` re-apuntado a `maister1122/WpfAppVba` en la sesión 2026-08-11/12): actualizar el broker es `git pull` + `dotnet publish -c Release -o /opt/conexionbroker` + `systemctl restart conexionbroker`. Ojo con lo que queda suelto en esa carpeta: los respaldos de editor del `appsettings.Production.json` tienen las credenciales en texto plano y el repo es público (ya cubiertos por `.gitignore` desde `742f56c`, pero conviene editar ese archivo fuera del repo).
 - **Pendiente / mejora futura no implementada**: el broker no tiene todavía límite de intentos fallidos de login (todos los logins ya pasan por este único punto, sería el lugar natural para agregarlo).
 
 ## Lo Que Falta Por Hacer
@@ -248,6 +249,7 @@ Servicio server-side mínimo (`ConexionBroker/`, ASP.NET Core Minimal API, `.NET
 ### Alta prioridad
 - [x] **CorreccionesDetalle → lógica de pestañas**: migrado a UserControl con `Cerrando` + `IntentarCerrar`; selectores usan `OpenAsTab`.
 - [x] **ArticulosDetalle → lógica de pestañas**: migrado a UserControl con `Cerrando` + `IntentarCerrar`; selectores usan `OpenAsTab`.
+- [ ] **Reinstalar el `Setup.exe` nuevo una vez en cada PC** (releases `v1.0.8`/`visor-v1.0.5`, ya publicadas desde el repo nuevo) — sesión 2026-08-11/12. Las apps instaladas antes de la mudanza buscan updates en `jhoelmaister/wpfappvba`, que está compilado adentro del binario y no se puede redirigir a distancia. Hasta que no se reinstale, esa PC no recibe ninguna actualización.
 - [ ] Verificar compilación y prueba completa del sistema (no hay herramientas de build en el entorno cloud — debe hacerse en máquina local).
 - [ ] Verificar en máquina local el catálogo editable nuevo de VisorEmpresa (Familias/Productos/Industrias/Categorías + Articulos) — sesión 2026-07-20, sin compilar en la nube.
 - [ ] Confirmar con el usuario el criterio de `estadoV` (opt-out vs opt-in) tras probarlo — sesión 2026-07-20.
@@ -274,8 +276,43 @@ Servicio server-side mínimo (`ConexionBroker/`, ASP.NET Core Minimal API, `.NET
 - **Las cachés de `ConsultasEmpresa` son `static` y sobreviven al cierre de sesión**: cualquier herramienta que reescriba datos en el servidor tiene que invalidarlas o los cambios no se ven al reingresar. Ya hay un `LimpiarCaches()` llamado desde `CerrarSesionInterno()` (sesión 2026-07-28/29) — si se agrega otra herramienta de este tipo, asegurarse de que pase por ahí.
 - **Los tres lados del `codigo` tienen que moverse juntos**: `MovimientoSql` (cubos), `CodigoDocumento` (creación) y `CodigoRegenerator` (renumerado). Cambiar el ámbito en uno solo hace que los códigos se muevan de lugar al regenerar — fue exactamente el bug de esta sesión, ver la sección "Códigos de documento".
 - **`CorreccionesDetalle` ya es pestaña**: usa `OpenAsTab` de ArticulosGeneral para buscar artículos, igual que Pedidos/Traspasos.
+- **El feed de actualización es una constante compilada, no una configuración**: `ActualizadorApp.RepoUrl` (y `AuthBrokerClient.BrokerUrl`) viven dentro del `.exe`. Cambiarlos exige publicar una versión nueva Y que cada PC la reciba — y si lo que cambió es justamente la URL del feed, las apps ya instaladas no pueden auto-actualizarse a ella: hay que reinstalar a mano una vez (fue el caso de la mudanza de cuenta, sesión 2026-08-11/12).
+- **El número de versión solo sube, y los releases no se migran con git**: al mover el repo viajaron los tags pero ninguna release (son artefactos de GitHub, no de git). Antes de publicar, mirar qué releases existen en el repo destino — no alcanza con mirar los tags.
 
 ## Historial de Cambios por Sesión
+
+### Sesión 2026-08-11/12 — Migración del repo a la cuenta de GitHub `maister1122`: URL del feed de auto-actualización en código, workflows y `publicar.ps1`; primeras releases desde el repo nuevo; clon del VPS re-apuntado; `.gitignore` endurecido contra respaldos de credenciales (rama `master`)
+
+> Sesión corta y operativa, sin un solo cambio de lógica de negocio: el repo se movió de la cuenta `jhoelmaister` a `maister1122` y había que dejar el circuito completo andando (auto-actualización, releases, VPS). El pedido fue *"analizá `MIGRACION-CUENTA-NUEVA.md` y seguí las instrucciones"* — ese checklist se había escrito en la sesión anterior justamente para esto. A mitad de camino la sesión quedó trabada sin poder pushear (ver más abajo), y el tramo final se resolvió por SSH contra el VPS.
+
+#### La URL del repo, cambiada en 5 archivos funcionales (`fc5a17b`)
+- La app busca sus actualizaciones en una URL **fija en el código**, así que mudar el repo la deja apuntando a la cuenta vieja. Se reemplazó `jhoelmaister/wpfappvba` por `https://github.com/maister1122/WpfAppVba` (el `origin` real) en: `SistemaGestion/ActualizadorApp.cs` y `VisorEmpresa/ActualizadorApp.cs` (`RepoUrl`), y `.github/workflows/release.yml` + `release-visor.yml` (2 líneas `--repoUrl` cada uno, en `vpk download` y `vpk upload`).
+- **`publicar.ps1` no figuraba en el checklist**: su comando de verificación (`git grep ... -- '*.cs' '*.yml'`) no mira `.ps1`, así que el `$RepoUrl` del publish manual se le escapaba — habría subido la release al repo viejo. Se corrigió también.
+- Docs actualizadas de paso: `CLAUDE.md`, `CONTEXT.md`, `CREAR-NUEVA-VERSION.md`, `PUBLICAR-ACTUALIZACIONES.md`, `REPLICAR-AUTOACTUALIZACION.md`, `ConexionBroker/README.md`. `MIGRACION-CUENTA-NUEVA.md` quedó intacto a propósito: cita la cuenta vieja para explicar la migración.
+- **`AuthBrokerClient.BrokerUrl` NO se tocó** (`https://conexion.jhoelmaister.tech`): el VPS es independiente de GitHub y sigue siendo el mismo. El vínculo app↔VPS no requirió ningún paso — es una constante compilada en el `.exe`, no una configuración.
+
+#### ⚠️ La sesión web quedó sin permiso de escritura hasta instalar la GitHub App en la cuenta nueva
+- Al ir a pushear: `403` en `git-receive-pack` (antes de negociar refs, o sea no era un tema de rama), y lo mismo por API REST (*"GitHub access is not enabled for this session"*) y por las herramientas MCP (`Resource not accessible by integration`). **Lectura sí, escritura no, por ningún camino.**
+- Causa: la **Claude GitHub App estaba instalada en la cuenta vieja**, no en `maister1122`. Es un paso de la mudanza que el checklist no contemplaba.
+- Mientras tanto el commit se entregó como parche (`git format-patch`), porque el contenedor de la sesión es efímero y el trabajo se perdía. Se destrabó cuando el usuario instaló la app en la cuenta nueva (GitHub → Settings → Applications → Claude, con *Read and write access to code*): el push salió al primer intento. **Para futuras mudanzas: instalar la GitHub App en la cuenta nueva ANTES de empezar.**
+
+#### Primeras releases desde el repo nuevo (las lanzó el usuario con Run workflow)
+- `Sistema de Gestión v1.0.8` y `Visor Empresa v1.0.5`, las dos con conclusión `success`, compiladas desde `fc5a17b` — o sea que **esos `Setup.exe` ya llevan la URL nueva adentro**.
+- Los tags `v1.0.8`/`visor-v1.0.5` ya existían en el repo nuevo (viajaron con el `git push` de la mudanza) pero **sin release asociada**: los releases NO se migran con git, son artefactos de GitHub. Por eso se pudo publicar con el mismo número sin choque de tags.
+- **La próxima versión tiene que ser `1.0.9` (y `1.0.6` el visor)**: 1.0.8 y 1.0.5 ya están consumidas como release en este repo.
+
+#### El VPS también tenía un clon apuntando al repo viejo
+- `~/WpfAppVba` en el VPS (de donde se publica el broker) tenía `origin` en `jhoelmaister/WpfAppVba.git`, así que el `git pull` del procedimiento de actualización del broker habría traído código viejo. Se re-apuntó con `git remote set-url` y se puso al día (estaba 13 commits atrás).
+- **No hubo que republicar el broker**: el pull no trajo ningún cambio de código de `ConexionBroker/` (solo su `README.md`). Verificado: `systemctl is-enabled conexionbroker caddy` → `enabled`/`enabled` (sobrevive un reboot, que el VPS tiene pendiente hace rato) y `curl http://127.0.0.1:5080/ping` → `200 OK`.
+
+#### Hallazgo: un respaldo de nano con las credenciales, fuera del `.gitignore` (`742f56c`)
+- El `git status` del VPS mostró `?? ConexionBroker/appsettings.Production.json.save` — el respaldo que deja **nano** al editar el archivo de credenciales. Tiene la contraseña real de SQL Server **en texto plano**, y este repo es **público**.
+- El `.gitignore` no lo cubría: la regla era el nombre exacto `ConexionBroker/appsettings.Production.json`, que no matchea las variantes. Un `git add -A` desde el VPS las habría publicado.
+- Se agregaron patrones para respaldos de editor dentro de `ConexionBroker/` (`appsettings.*.json.*`, `*.save`, `*.swp`, `*~`) y se borró el archivo del VPS.
+
+#### Notas / pendientes de esta sesión
+- **Nada se compiló** en el entorno remoto (sin SDK de .NET, como siempre), pero el cambio es un reemplazo de texto en una constante y en argumentos de línea de comandos, y las dos releases compilaron `success` en Actions — esa es la verificación real.
+- **Falta reinstalar el `Setup.exe` nuevo una vez en cada PC**: las apps instaladas tienen la URL vieja compilada adentro y no se pueden redirigir a distancia. Es un corte manual, una sola vez; de ahí en más las actualizaciones vuelven a llegar solas.
 
 ### Sesión 2026-07-28/29 — Facturas restaurada como documento propio + "Validar pedido"; los 4 módulos de documentos partidos en dos entradas de sidebar (Ventas/Compras, Entradas/Salidas, Repuestas/Retirados, Ingresos/Egresos); códigos sin signo por empresa+movimiento en creación Y regeneración; botón "Eliminar ocultos" (rama `master`)
 
