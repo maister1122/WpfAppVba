@@ -41,20 +41,23 @@
     numeración 1..N ordenada por `descripcion` (excepto `usuarios`, que no
     tiene esa columna y se ordena por `apellidos, nombres`). Son catálogos
     globales de toda la base: no se filtran por empresa.
-  - `documentosP`/`documentosC`/`documentosF`: `nvarchar`, correlativo 1..N
+  - `documentosP`/`documentosC`/`documentosF`: `int`, correlativo 1..N
     **partido por tipo de movimiento** (`documentosP`: venta/compra;
     `documentosC`: repuesta/retirado; `documentosF`: ingreso/egreso —
     normalizando vocabulario viejo al nuevo, mismo criterio que
     `NormalizarMovimiento` en cada `*General`), ordenado por fecha, filtrado
     a la empresa activa vía cascada `sucursal` → `sucursales.empresa`.
-  - `documentosI`: `nvarchar`, correlativo 1..N sin partición, ordenado por
+  - `documentosI`: `int`, correlativo 1..N sin partición, ordenado por
     fecha, filtrado a la empresa activa vía `sucursal` → `sucursales.empresa`.
-  - `documentosT`: `nvarchar`, correlativo 1..N sin partición, ordenado por
+  - `documentosT`: `int`, correlativo 1..N sin partición, ordenado por
     fecha, filtrado a la empresa activa vía cascada `emitido` → `sucursales` →
     `empresas`.
-  - `documentosL`: `nvarchar`, correlativo 1..N sin partición, ordenado por
+  - `documentosL`: `int`, correlativo 1..N sin partición, ordenado por
     fecha, filtrado a la empresa activa (columna `empresa` directa,
     comparación de texto contra el id).
+  - **`articulos.codigo` es la única excepción**: sigue siendo `nvarchar(100)`
+    porque lo escribe el usuario a mano y admite letras. El regenerador no lo
+    toca.
 - **Columnas `uniqueidentifier` que no son `id`** son claves foráneas
   (apuntan al `id` de otra tabla) — no hay `FOREIGN KEY` declaradas en el
   script, la integridad se maneja desde la app.
@@ -259,6 +262,20 @@ que cambió es la documentación, no el esquema:
   El `DROP` de `pedidos.forma`/`contable` que este documento daba por hecho en
   la sesión 2026-07-24 nunca llegó a correrse.
 
+- **`codigo` de los 6 documentos pasa de `nvarchar(100)` a `int`**
+  (`documentosP`, `documentosC`, `documentosF`, `documentosI`, `documentosL`,
+  `documentosT`). Desde la sesión 2026-07-29 el código es siempre el correlativo
+  pelado, así que el texto no representaba nada que no fuera un entero y encima
+  ordenaba mal ("10" antes que "9"). `articulos.codigo` queda en `nvarchar(100)`
+  a pedido explícito del usuario. Las maestras ya eran `int`.
+  **El cambio en la base se aplica corriendo `codigo-a-int.sql` (raíz del
+  repo), y hasta que se corra este documento va por delante de la base real.**
+  Del lado del código solo cambió `CodigoRegenerator`, que ahora emite
+  `CAST(rn AS INT)` en vez de `CAST(rn AS NVARCHAR(50))` en las 6 consultas de
+  documentos (los dos proyectos). El resto de la app ya era indiferente al tipo:
+  lee con `ObtenerItem(...)?.ToString()` y escribe strings numéricos que SQL
+  Server convierte solo.
+
 Opciones de la base que conviene tener presentes (del mismo script):
 `RECOVERY SIMPLE` (sin recuperación punto-en-el-tiempo: se depende del último
 full backup), `FILEGROWTH = 1024KB` en el `.mdf`, y **ni un solo índice fuera de
@@ -343,7 +360,7 @@ Cabecera de correcciones de stock.
 | movimiento  | nvarchar(100)       | sí   |
 | observacion | nvarchar(255)       | sí   |
 | motivo      | nvarchar(255)       | sí   |
-| codigo      | nvarchar(100)       | sí   |
+| codigo      | int                 | sí   |
 | id          | uniqueidentifier    | NO   |
 | sucursal    | uniqueidentifier    | sí   |
 | usuario     | uniqueidentifier    | sí   | creó (fijo, no se toca al editar) — determina quién puede eliminar/ocultar el documento además del admin |
@@ -359,7 +376,7 @@ Cabecera de facturas.
 | Columna     | Tipo               | Null | Nota |
 |-------------|---------------------|------|------|
 | id          | uniqueidentifier    | NO   | |
-| codigo      | nvarchar(100)       | sí   | |
+| codigo      | int                 | sí   | |
 | fecha       | datetime            | sí   | |
 | emision     | datetime            | sí   | |
 | edicion     | datetime            | sí   | |
@@ -385,7 +402,7 @@ Cabecera de inventarios.
 | emision     | datetime            | sí   |
 | edicion     | datetime            | sí   |
 | estadof     | nvarchar(100)       | sí   |
-| codigo      | nvarchar(100)       | sí   |
+| codigo      | int                 | sí   |
 | id          | uniqueidentifier    | NO   |
 | sucursal    | uniqueidentifier    | sí   |
 | usuario     | uniqueidentifier    | sí   | creó (fijo, no se toca al editar) — determina quién puede eliminar/ocultar el documento además del admin |
@@ -398,7 +415,7 @@ Cabecera de listas de precios.
 | Columna     | Tipo               | Null | Nota |
 |-------------|---------------------|------|------|
 | id          | uniqueidentifier    | NO   | |
-| codigo      | nvarchar(100)       | sí   | |
+| codigo      | int                 | sí   | |
 | fecha       | datetime            | sí   | |
 | emision     | datetime            | sí   | |
 | edicion     | datetime            | sí   | |
@@ -427,7 +444,7 @@ Cabecera de pedidos (ventas/compras).
 | observacion | nvarchar(255)       | sí   | |
 | estadoC     | nvarchar(100)       | sí   | "pendiente"/"cancelado"/"pendiente parcial" — estado de cuenta |
 | estadoA     | nvarchar(100)       | sí   | **sin uso** — quedó de la pestaña "Facturas del pedido" (eliminada); se puede `DROP COLUMN` |
-| codigo      | nvarchar(100)       | sí   | |
+| codigo      | int                 | sí   | |
 | id          | uniqueidentifier    | NO   | |
 | sucursal    | uniqueidentifier    | sí   | sucursal emisora (única columna de sucursal; `emitido` se eliminó por ser duplicada) |
 | usuario     | uniqueidentifier    | sí   | creó (fijo, no se toca al editar) — determina quién puede eliminar/ocultar el documento además del admin |
@@ -446,7 +463,7 @@ Cabecera de traspasos entre sucursales.
 | referencia  | nvarchar(255)       | sí   | |
 | estadof     | nvarchar(100)       | sí   | |
 | observacion | nvarchar(255)       | sí   | |
-| codigo      | nvarchar(100)       | sí   | |
+| codigo      | int                 | sí   | |
 | id          | uniqueidentifier    | NO   | |
 | origen      | uniqueidentifier    | sí   | |
 | destino     | uniqueidentifier    | sí   | |

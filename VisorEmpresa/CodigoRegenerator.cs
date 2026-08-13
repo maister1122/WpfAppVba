@@ -84,8 +84,10 @@ namespace VisorEmpresa.Data
         }
 
         // ─── Maestras: codigo = 1..N (orden por colOrden) ─────────────────────
-        // codigo es INT en las tablas maestras (a diferencia de los documentos,
-        // donde es NVARCHAR) — el CAST castea al tipo real.
+        // codigo es INT en TODAS las tablas que renumera este archivo (maestras y
+        // documentos): los documentosP/C/F/I/L/T pasaron de NVARCHAR(100) a INT
+        // (ver codigo-a-int.sql), porque el correlativo siempre fue un entero.
+        // articulos.codigo sigue siendo NVARCHAR y NO lo toca el regenerador.
         private static int RenumerarMaestra(SqlConnection conn, SqlTransaction tx, string tabla, string colOrden)
         {
             string sql =
@@ -110,7 +112,7 @@ namespace VisorEmpresa.Data
                 "  FROM documentosP AS d " +
                 "  INNER JOIN sucursales AS s ON s.id = d.sucursal " +
                 "  WHERE s.empresa = @emp" +
-                ") UPDATE cte SET codigo = CAST(rn AS NVARCHAR(50));";
+                ") UPDATE cte SET codigo = CAST(rn AS INT);";
             return Ejecutar(conn, tx, sql, empresaId);
         }
 
@@ -131,7 +133,7 @@ namespace VisorEmpresa.Data
                 "  FROM documentosC AS d " +
                 "  INNER JOIN sucursales AS s ON s.id = d.sucursal " +
                 "  WHERE s.empresa = @emp" +
-                ") UPDATE cte SET codigo = CAST(rn AS NVARCHAR(50));";
+                ") UPDATE cte SET codigo = CAST(rn AS INT);";
             return Ejecutar(conn, tx, sql, empresaId);
         }
 
@@ -150,7 +152,7 @@ namespace VisorEmpresa.Data
                 "  FROM documentosF AS d " +
                 "  INNER JOIN sucursales AS s ON s.id = d.sucursal " +
                 "  WHERE s.empresa = @emp" +
-                ") UPDATE cte SET codigo = CAST(rn AS NVARCHAR(50));";
+                ") UPDATE cte SET codigo = CAST(rn AS INT);";
             return Ejecutar(conn, tx, sql, empresaId);
         }
 
@@ -165,7 +167,7 @@ namespace VisorEmpresa.Data
                 "  FROM documentosI AS d " +
                 "  INNER JOIN sucursales AS s ON s.id = d.sucursal " +
                 "  WHERE s.empresa = @emp" +
-                ") UPDATE cte SET codigo = CAST(rn AS NVARCHAR(50));";
+                ") UPDATE cte SET codigo = CAST(rn AS INT);";
             return Ejecutar(conn, tx, sql, empresaId);
         }
 
@@ -181,7 +183,7 @@ namespace VisorEmpresa.Data
                 "  FROM documentosT AS d " +
                 "  INNER JOIN sucursales AS s ON s.id = d.emitido " +
                 "  WHERE s.empresa = @emp" +
-                ") UPDATE cte SET codigo = CAST(rn AS NVARCHAR(50));";
+                ") UPDATE cte SET codigo = CAST(rn AS INT);";
             return Ejecutar(conn, tx, sql, empresaId);
         }
 
@@ -197,7 +199,7 @@ namespace VisorEmpresa.Data
                 "         ROW_NUMBER() OVER (ORDER BY d.fecha, d.id) AS rn " +
                 "  FROM documentosL AS d " +
                 "  WHERE d.empresa = @emp" +
-                ") UPDATE cte SET codigo = CAST(rn AS NVARCHAR(50));";
+                ") UPDATE cte SET codigo = CAST(rn AS INT);";
             return Ejecutar(conn, tx, sql, empresaId);
         }
 
