@@ -261,6 +261,12 @@ namespace VisorEmpresa
             var fila = lista.Aggregate((a, b) => b.Fecha >= a.Fecha ? b : a);
             Grid1.SelectedItem = fila;
             Grid1.ScrollIntoView(fila);
+
+            // Foco de teclado en la fila: seleccionarla solo la pinta. Mismo helper
+            // que ya usan Nuevo/Editar/Eliminar. NO roba el foco si el usuario está
+            // tecleando en la búsqueda o navegando el árbol con el teclado.
+            if (TxtBuscar.IsKeyboardFocusWithin || Tree1.IsKeyboardFocusWithin) return;
+            GridFocusHelper.EnfocarCeldaSeleccionada(Grid1);
         }
 
         // ─── Filtros ──────────────────────────────────────────────────────────

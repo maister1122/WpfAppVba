@@ -76,6 +76,10 @@ namespace SistemaGestion
             var fila = lista.Aggregate((a, b) => b.Fecha >= a.Fecha ? b : a);
             Grid1.SelectedItem = fila;
             Grid1.ScrollIntoView(fila);
+
+            // Foco de teclado en la fila: seleccionarla solo la pinta. Mismo helper
+            // que ya usan Nuevo/Editar/Eliminar.
+            GridFocusHelper.EnfocarCeldaSeleccionada(Grid1);
         }
 
         // ─── Helpers de actualización incremental del Grid1 ───────────────────

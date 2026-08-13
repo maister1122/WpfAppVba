@@ -239,6 +239,14 @@ namespace SistemaGestion
             if (fila == null) return;
             Grid1.SelectedItem = fila;
             Grid1.ScrollIntoView(fila);
+
+            // Foco de teclado en la fila: seleccionarla solo la pinta, sin foco las
+            // flechas siguen moviendo otro control. Mismo helper que ya usan
+            // Nuevo/Editar/Eliminar (GridFocusHelper: difiere a prioridad Background
+            // y saltea columnas ocultas). NO roba el foco si el usuario está
+            // tecleando en la búsqueda o navegando el árbol de meses con el teclado.
+            if (TxtBuscar.IsKeyboardFocusWithin || Tree1.IsKeyboardFocusWithin) return;
+            GridFocusHelper.EnfocarCeldaSeleccionada(Grid1);
         }
 
         private string ObtenerFiltroTipo()
