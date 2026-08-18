@@ -13,7 +13,8 @@
     <!-- Versión del visor: independiente de la app principal. Arranca en 1.0.1: no se
          había publicado ninguna versión nueva del visor todavía, así que se reinicia
          la numeración desde acá. -->
-    <Version>1.0.5</Version>
+
+    <Version>1.0.6</Version>
 
     <!-- Símbolo de compilación exclusivo del visor: los formularios Detalle
          vinculados (PedidosDetalle, etc.) usan #if !VISOR alrededor de los
