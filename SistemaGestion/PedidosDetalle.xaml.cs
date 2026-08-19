@@ -41,6 +41,8 @@ namespace SistemaGestion
         private readonly HashSet<string> _articulosAlertados = new();
         private string                   _observaciones = "";
         private string                   _codigoDocP    = "";
+        // Evita guardados duplicados por clicks repetidos en Guardar (ver TraspasosDetalle).
+        private bool _guardando = false;
 
         public string? DocumentoCreadoId { get; private set; }
 
@@ -1358,12 +1360,23 @@ namespace SistemaGestion
 
         private bool Guardar()
         {
-            if (!SinPestañasRelacionadas()) return false;
-            if (!FuncionesComunes.VerificarConexionParaGuardar(Window.GetWindow(this))) return false;
+            if (_guardando) return false;
+            _guardando = true;
+            BtnGuardar.IsEnabled = false;
+            try
+            {
+                if (!SinPestañasRelacionadas()) return false;
+                if (!FuncionesComunes.VerificarConexionParaGuardar(Window.GetWindow(this))) return false;
 
-            return AppState.EventoFormularioM == "editar"
-                ? GuardarEditar()
-                : GuardarNuevo();
+                return AppState.EventoFormularioM == "editar"
+                    ? GuardarEditar()
+                    : GuardarNuevo();
+            }
+            finally
+            {
+                _guardando = false;
+                BtnGuardar.IsEnabled = true;
+            }
         }
 
         // ─── Revisión del código al guardar ───────────────────────────────────
@@ -1419,7 +1432,6 @@ namespace SistemaGestion
                 GuardarLineasEntrega(id);
                 OrdenarTablas();
 
-                MessageBox.Show("Guardado exitoso.", "Consola", MessageBoxButton.OK, MessageBoxImage.Information);
                 _cambioDocumento = _cambioPedido = _cambioTrasaccion = _cambioEntrega = false;
                 DocumentoCreadoId = id;
                 return true;
@@ -1452,7 +1464,6 @@ namespace SistemaGestion
                 if (_cambioEntrega)    GuardarLineasEntrega(docP);
                 OrdenarTablas();
 
-                MessageBox.Show("Guardado exitoso.", "Consola", MessageBoxButton.OK, MessageBoxImage.Information);
                 _cambioDocumento = _cambioPedido = _cambioTrasaccion = _cambioEntrega = false;
                 return true;
             }

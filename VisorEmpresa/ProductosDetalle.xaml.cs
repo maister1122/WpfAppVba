@@ -16,6 +16,8 @@ namespace VisorEmpresa
         private readonly bool   _modoEditar;
         private bool _hayCambios = false;
         private bool _cargando   = true;
+        // Evita guardados duplicados por clicks repetidos en Guardar (ver TraspasosDetalle en SistemaGestion).
+        private bool _guardando  = false;
 
         private bool _iniciado = false;
         private readonly string _tituloTab;
@@ -80,8 +82,19 @@ namespace VisorEmpresa
         // ─── Guardar ─────────────────────────────────────────────────────────
         private bool Guardar()
         {
-            if (!FuncionesComunes.VerificarConexionParaGuardar(Window.GetWindow(this))) return false;
-            return _modoEditar ? GuardarEditar() : GuardarNuevo();
+            if (_guardando) return false;
+            _guardando = true;
+            BtnGuardar.IsEnabled = false;
+            try
+            {
+                if (!FuncionesComunes.VerificarConexionParaGuardar(Window.GetWindow(this))) return false;
+                return _modoEditar ? GuardarEditar() : GuardarNuevo();
+            }
+            finally
+            {
+                _guardando = false;
+                BtnGuardar.IsEnabled = true;
+            }
         }
 
         private bool GuardarEditar()
@@ -94,7 +107,6 @@ namespace VisorEmpresa
                 Sql.ProductosObj.EstablecerItem("usuarioE",    id, AppState.UsuarioActivo);
 
                 Sql.ProductosObj.OrdenarData(("codigo", false));
-                MessageBox.Show("Guardado exitoso", "Consola", MessageBoxButton.OK, MessageBoxImage.Information);
                 return true;
             }
             catch (Exception ex)
@@ -134,7 +146,6 @@ namespace VisorEmpresa
                 Sql.ProductosObj.EstablecerItem("empresa",     id, AppState.EmpresaActiva);
 
                 Sql.ProductosObj.OrdenarData(("codigo", false));
-                MessageBox.Show("Guardado exitoso", "Consola", MessageBoxButton.OK, MessageBoxImage.Information);
                 ItemCreadoId = id;
                 return true;
             }

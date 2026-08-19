@@ -278,7 +278,7 @@
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                 <Button Content="Cancelar" Padding="18,0" Style="{StaticResource BtnSecundario}"
                         Margin="0,0,10,0" Click="BtnCancelar_Click"/>
-                <Button Content="&#x1F4BE; Guardar" Padding="18,0" Style="{StaticResource BtnPrimario}"
+                <Button x:Name="BtnGuardar" Content="&#x1F4BE; Guardar" Padding="18,0" Style="{StaticResource BtnPrimario}"
                         Click="BtnGuardar_Click"/>
             </StackPanel>
         </Border>

@@ -13,6 +13,8 @@ namespace SistemaGestion
         private readonly string _idEditar;
         private bool _hayCambios = false;
         private bool _cargando   = true;
+        // Evita guardados duplicados por clicks repetidos en Guardar (ver TraspasosDetalle).
+        private bool _guardando  = false;
 
         public event Action? Cerrando;
         public string? ItemCreadoId { get; private set; }
@@ -81,11 +83,22 @@ namespace SistemaGestion
         // ─── Guardar (equivalente a guardarCambios) ───────────────────────────
         private bool Guardar()
         {
-            if (!FuncionesComunes.VerificarConexionParaGuardar(Window.GetWindow(this))) return false;
+            if (_guardando) return false;
+            _guardando = true;
+            BtnGuardar.IsEnabled = false;
+            try
+            {
+                if (!FuncionesComunes.VerificarConexionParaGuardar(Window.GetWindow(this))) return false;
 
-            return AppState.EventoFormularioL == "modificar"
-                ? GuardarEditar()
-                : GuardarNuevo();
+                return AppState.EventoFormularioL == "modificar"
+                    ? GuardarEditar()
+                    : GuardarNuevo();
+            }
+            finally
+            {
+                _guardando = false;
+                BtnGuardar.IsEnabled = true;
+            }
         }
 
         private bool GuardarEditar()
@@ -105,7 +118,6 @@ namespace SistemaGestion
                 Sql.TercerosObj.EstablecerItem("usuarioE",    id, AppState.UsuarioActivo);
 
                 Sql.TercerosObj.OrdenarData(("codigo", false));
-                MessageBox.Show("Guardado exitoso", "Consola", MessageBoxButton.OK, MessageBoxImage.Information);
                 return true;
             }
             catch (Exception ex)
@@ -153,7 +165,6 @@ namespace SistemaGestion
 
                 Sql.TercerosObj.OrdenarData(("codigo", false));
                 ItemCreadoId = id;
-                MessageBox.Show("Guardado exitoso", "Consola", MessageBoxButton.OK, MessageBoxImage.Information);
                 return true;
             }
             catch (Exception ex)

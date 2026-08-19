@@ -31,6 +31,8 @@ namespace SistemaGestion
         private bool _iniciado = false;
         private readonly string _tituloTab;
         private string _codigoDocC = "";
+        // Evita guardados duplicados por clicks repetidos en Guardar (ver TraspasosDetalle).
+        private bool _guardando = false;
 
         /// <summary>ID del documento de corrección recién creado.</summary>
         public string? ItemCreadoId { get; private set; }
@@ -615,12 +617,23 @@ namespace SistemaGestion
         // ─── Guardar ─────────────────────────────────────────────────────────
         private bool Guardar()
         {
-            if (!SinPestañasRelacionadas()) return false;
-            if (!FuncionesComunes.VerificarConexionParaGuardar(Window.GetWindow(this))) return false;
+            if (_guardando) return false;
+            _guardando = true;
+            BtnGuardar.IsEnabled = false;
+            try
+            {
+                if (!SinPestañasRelacionadas()) return false;
+                if (!FuncionesComunes.VerificarConexionParaGuardar(Window.GetWindow(this))) return false;
 
-            return AppState.EventoFormularioC == "editar"
-                ? GuardarEditar()
-                : GuardarNuevo();
+                return AppState.EventoFormularioC == "editar"
+                    ? GuardarEditar()
+                    : GuardarNuevo();
+            }
+            finally
+            {
+                _guardando = false;
+                BtnGuardar.IsEnabled = true;
+            }
         }
 
         private bool ValidarCabecera()
@@ -693,7 +706,6 @@ namespace SistemaGestion
                 Sql.CorreccionesObj.OrdenarData(("documentoC", false), ("indice", false));
                 Sql.DocumentosCObj.OrdenarData(("fecha", false));
 
-                MessageBox.Show("Guardado exitoso", "Consola", MessageBoxButton.OK, MessageBoxImage.Information);
                 ItemCreadoId = docId;
                 return true;
             }
@@ -727,7 +739,6 @@ namespace SistemaGestion
                 Sql.CorreccionesObj.OrdenarData(("documentoC", false), ("indice", false));
                 Sql.DocumentosCObj.OrdenarData(("fecha", false));
 
-                MessageBox.Show("Guardado exitoso", "Consola", MessageBoxButton.OK, MessageBoxImage.Information);
                 return true;
             }
             catch (Exception ex)

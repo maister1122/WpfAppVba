@@ -40,6 +40,11 @@ namespace VisorEmpresa
         private bool _hayCambios = false;
         private bool _cargando   = true;
         private List<PrecioItemFila> _items = new();
+        // Evita guardados duplicados por clicks repetidos en Guardar (ver TraspasosDetalle
+        // en SistemaGestion). Acá además cierra el hueco de reentrada async: sin esto,
+        // un segundo click podía colarse durante el MessageBox de VerificarCodigo(),
+        // antes de que GuardarNuevoAsync llegue a deshabilitar la ventana.
+        private bool _guardando = false;
 
         // Stock/Disponible por artículo, TOTAL de la empresa (todas las sucursales).
         // Se recalcula en carga inicial y en BtnActualizar_Click; RefrescarGrid solo
@@ -791,11 +796,22 @@ namespace VisorEmpresa
         // ─── Guardar ─────────────────────────────────────────────────────────
         private async Task<bool> GuardarAsync()
         {
-            if (!FuncionesComunes.VerificarConexionParaGuardar(Window.GetWindow(this))) return false;
+            if (_guardando) return false;
+            _guardando = true;
+            BtnGuardar.IsEnabled = false;
+            try
+            {
+                if (!FuncionesComunes.VerificarConexionParaGuardar(Window.GetWindow(this))) return false;
 
-            return !string.IsNullOrEmpty(_idEditar)
-                ? await GuardarEditarAsync()
-                : await GuardarNuevoAsync();
+                return !string.IsNullOrEmpty(_idEditar)
+                    ? await GuardarEditarAsync()
+                    : await GuardarNuevoAsync();
+            }
+            finally
+            {
+                _guardando = false;
+                BtnGuardar.IsEnabled = true;
+            }
         }
 
         private bool ValidarCabecera()
@@ -882,7 +898,6 @@ namespace VisorEmpresa
                     Mouse.OverrideCursor = null;
                 }
 
-                MessageBox.Show("Guardado exitoso", "Consola", MessageBoxButton.OK, MessageBoxImage.Information);
                 ItemCreadoId = docId;
                 return true;
             }
@@ -929,7 +944,6 @@ namespace VisorEmpresa
                     Mouse.OverrideCursor = null;
                 }
 
-                MessageBox.Show("Guardado exitoso", "Consola", MessageBoxButton.OK, MessageBoxImage.Information);
                 return true;
             }
             catch (Exception ex)

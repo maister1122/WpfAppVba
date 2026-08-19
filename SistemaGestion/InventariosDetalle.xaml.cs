@@ -29,6 +29,8 @@ namespace SistemaGestion
         private string _tituloTab = "";
         private string _codigoDocI = "";
         private List<InventarioItemFila> _items = new();
+        // Evita guardados duplicados por clicks repetidos en Guardar (ver TraspasosDetalle).
+        private bool _guardando = false;
 
         // Modo de filtro activo: "todos" (carga inicial) | "busqueda" (TxtBuscar) | "familia" (Tree1)
         private string _modoFiltro = "todos";
@@ -738,11 +740,22 @@ namespace SistemaGestion
         // ─── Guardar ─────────────────────────────────────────────────────────
         private bool Guardar()
         {
-            if (!FuncionesComunes.VerificarConexionParaGuardar(Window.GetWindow(this))) return false;
+            if (_guardando) return false;
+            _guardando = true;
+            BtnGuardar.IsEnabled = false;
+            try
+            {
+                if (!FuncionesComunes.VerificarConexionParaGuardar(Window.GetWindow(this))) return false;
 
-            return AppState.EventoFormularioI == "editar"
-                ? GuardarEditar()
-                : GuardarNuevo();
+                return AppState.EventoFormularioI == "editar"
+                    ? GuardarEditar()
+                    : GuardarNuevo();
+            }
+            finally
+            {
+                _guardando = false;
+                BtnGuardar.IsEnabled = true;
+            }
         }
 
         private bool GuardarEditar()
@@ -771,7 +784,6 @@ namespace SistemaGestion
                 AppState.ActualizarBase(periodo);
                 AppLoader.ConectarDocumentos(AppState.DataFechaInicio, AppState.DataFechaFinal);
 
-                MessageBox.Show("Guardado exitoso", "Consola", MessageBoxButton.OK, MessageBoxImage.Information);
                 return true;
             }
             catch (Exception ex)
@@ -831,7 +843,6 @@ namespace SistemaGestion
                 AppState.ActualizarBase(periodo);
                 AppLoader.ConectarDocumentos(AppState.DataFechaInicio, AppState.DataFechaFinal);
 
-                MessageBox.Show("Guardado exitoso", "Consola", MessageBoxButton.OK, MessageBoxImage.Information);
                 ItemCreadoId = docId;
                 return true;
             }

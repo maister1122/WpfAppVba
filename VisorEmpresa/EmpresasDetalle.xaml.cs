@@ -17,6 +17,8 @@ namespace VisorEmpresa
         private bool _cargando   = true;
         private bool _iniciado   = false;
         private string _tituloTab = "";
+        // Evita guardados duplicados por clicks repetidos en Guardar (ver TraspasosDetalle en SistemaGestion).
+        private bool _guardando  = false;
 
         public event Action? Cerrando;
 
@@ -95,8 +97,19 @@ namespace VisorEmpresa
         // ─── Guardar ─────────────────────────────────────────────────────────
         private bool Guardar()
         {
-            if (!FuncionesComunes.VerificarConexionParaGuardar(Window.GetWindow(this))) return false;
-            return _modoEditar ? GuardarEditar() : GuardarNuevo();
+            if (_guardando) return false;
+            _guardando = true;
+            BtnGuardar.IsEnabled = false;
+            try
+            {
+                if (!FuncionesComunes.VerificarConexionParaGuardar(Window.GetWindow(this))) return false;
+                return _modoEditar ? GuardarEditar() : GuardarNuevo();
+            }
+            finally
+            {
+                _guardando = false;
+                BtnGuardar.IsEnabled = true;
+            }
         }
 
         private bool GuardarEditar()
@@ -111,7 +124,6 @@ namespace VisorEmpresa
                 Sql.EmpresasObj.EstablecerItem("usuarioE",    id, AppState.UsuarioActivo);
 
                 Sql.EmpresasObj.OrdenarData(("codigo", false));
-                MessageBox.Show("Guardado exitoso", "Consola", MessageBoxButton.OK, MessageBoxImage.Information);
                 return true;
             }
             catch (Exception ex)
@@ -153,7 +165,6 @@ namespace VisorEmpresa
                 Sql.EmpresasObj.EstablecerItem("usuarioE",    id, AppState.UsuarioActivo);
 
                 Sql.EmpresasObj.OrdenarData(("codigo", false));
-                MessageBox.Show("Guardado exitoso", "Consola", MessageBoxButton.OK, MessageBoxImage.Information);
                 ItemCreadoId = id;
                 return true;
             }

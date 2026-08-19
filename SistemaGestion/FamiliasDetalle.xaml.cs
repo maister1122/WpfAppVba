@@ -16,6 +16,8 @@ namespace SistemaGestion
         private readonly string _idEditar;
         private bool _hayCambios = false;
         private bool _cargando   = true;
+        // Evita guardados duplicados por clicks repetidos en Guardar (ver TraspasosDetalle).
+        private bool _guardando  = false;
 
         private bool _iniciado = false;
         private readonly string _tituloTab;
@@ -102,20 +104,31 @@ namespace SistemaGestion
         // ─── Guardar ─────────────────────────────────────────────────────────
         private bool Guardar()
         {
-            if (!FuncionesComunes.VerificarConexionParaGuardar(Window.GetWindow(this))) return false;
-
-            // La familia debe tener asignado un producto EXISTENTE (ResolverProductoId
-            // devuelve "" tanto si está vacío como si el código no existe).
-            if (string.IsNullOrEmpty(ResolverProductoId()))
+            if (_guardando) return false;
+            _guardando = true;
+            BtnGuardar.IsEnabled = false;
+            try
             {
-                MessageBox.Show("Debe asignar un producto existente a la familia.", "Consola",
-                    MessageBoxButton.OK, MessageBoxImage.Warning);
-                return false;
-            }
+                if (!FuncionesComunes.VerificarConexionParaGuardar(Window.GetWindow(this))) return false;
 
-            return AppState.EventoFormularioF == "modificar"
-                ? GuardarEditar()
-                : GuardarNuevo();
+                // La familia debe tener asignado un producto EXISTENTE (ResolverProductoId
+                // devuelve "" tanto si está vacío como si el código no existe).
+                if (string.IsNullOrEmpty(ResolverProductoId()))
+                {
+                    MessageBox.Show("Debe asignar un producto existente a la familia.", "Consola",
+                        MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return false;
+                }
+
+                return AppState.EventoFormularioF == "modificar"
+                    ? GuardarEditar()
+                    : GuardarNuevo();
+            }
+            finally
+            {
+                _guardando = false;
+                BtnGuardar.IsEnabled = true;
+            }
         }
 
         private bool GuardarEditar()
@@ -130,7 +143,6 @@ namespace SistemaGestion
                 Sql.FamiliasObj.EstablecerItem("usuarioE",    id, AppState.UsuarioActivo);
 
                 Sql.FamiliasObj.OrdenarData(("codigo", false));
-                MessageBox.Show("Guardado exitoso", "Consola", MessageBoxButton.OK, MessageBoxImage.Information);
                 return true;
             }
             catch (Exception ex)
@@ -171,7 +183,6 @@ namespace SistemaGestion
                 Sql.FamiliasObj.EstablecerItem("usuarioE",    id, AppState.UsuarioActivo);
 
                 Sql.FamiliasObj.OrdenarData(("codigo", false));
-                MessageBox.Show("Guardado exitoso", "Consola", MessageBoxButton.OK, MessageBoxImage.Information);
                 ItemCreadoId = id;
                 return true;
             }

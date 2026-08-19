@@ -31,6 +31,8 @@ namespace VisorEmpresa
 
         private bool _iniciado = false;
         private readonly string _tituloTab;
+        // Evita guardados duplicados por clicks repetidos en Guardar (ver TraspasosDetalle en SistemaGestion).
+        private bool _guardando = false;
 
         /// <summary>ID del artículo recién creado (nuevo o insertado).</summary>
         public string? ItemCreadoId { get; private set; }
@@ -285,29 +287,40 @@ namespace VisorEmpresa
 
         private bool Guardar()
         {
-            if (!SinPestañasRelacionadas()) return false;
-            if (!FuncionesComunes.VerificarConexionParaGuardar(Window.GetWindow(this))) return false;
-
-            if (string.IsNullOrEmpty(ResolverFamiliaId()))
+            if (_guardando) return false;
+            _guardando = true;
+            BtnGuardar.IsEnabled = false;
+            try
             {
-                MessageBox.Show("Debe asignar una familia existente al artículo.", "Consola",
-                    MessageBoxButton.OK, MessageBoxImage.Warning);
-                return false;
+                if (!SinPestañasRelacionadas()) return false;
+                if (!FuncionesComunes.VerificarConexionParaGuardar(Window.GetWindow(this))) return false;
+
+                if (string.IsNullOrEmpty(ResolverFamiliaId()))
+                {
+                    MessageBox.Show("Debe asignar una familia existente al artículo.", "Consola",
+                        MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return false;
+                }
+
+                if (string.IsNullOrEmpty(ResolverCategoriaId()))
+                {
+                    MessageBox.Show("Debe asignar una categoría existente al artículo.", "Consola",
+                        MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return false;
+                }
+
+                return AppState.EventoFormularioA switch
+                {
+                    "modificar" => GuardarEditar(),
+                    "insertar"  => GuardarInsertar(),
+                    _            => GuardarNuevo()
+                };
             }
-
-            if (string.IsNullOrEmpty(ResolverCategoriaId()))
+            finally
             {
-                MessageBox.Show("Debe asignar una categoría existente al artículo.", "Consola",
-                    MessageBoxButton.OK, MessageBoxImage.Warning);
-                return false;
+                _guardando = false;
+                BtnGuardar.IsEnabled = true;
             }
-
-            return AppState.EventoFormularioA switch
-            {
-                "modificar" => GuardarEditar(),
-                "insertar"  => GuardarInsertar(),
-                _            => GuardarNuevo()
-            };
         }
 
         private bool GuardarEditar()
@@ -327,7 +340,6 @@ namespace VisorEmpresa
                 Sql.ArticulosObj.EstablecerItem("usuarioE",   id, AppState.UsuarioActivo);
 
                 Sql.ArticulosObj.OrdenarData(("familia", false), ("indice", false));
-                MessageBox.Show("Guardado exitoso", "Consola", MessageBoxButton.OK, MessageBoxImage.Information);
                 return true;
             }
             catch (Exception ex)
@@ -372,8 +384,6 @@ namespace VisorEmpresa
                 Sql.ArticulosObj.EstablecerItem("usuarioE",   id, AppState.UsuarioActivo);
 
                 Sql.ArticulosObj.OrdenarData(("familia", false), ("indice", false));
-
-                MessageBox.Show("Guardado exitoso", "Consola", MessageBoxButton.OK, MessageBoxImage.Information);
 
                 // Artículo nuevo → sincronizar AppSheets (todas las sucursales).
                 ArticulosGeneral.SincronizarAppsheetsTrasCambio();
@@ -447,8 +457,6 @@ namespace VisorEmpresa
                 ArticulosGeneral.RenumerarFamilia(famNuevaId);
 
                 Sql.ArticulosObj.OrdenarData(("familia", false), ("indice", false));
-
-                MessageBox.Show("Guardado exitoso", "Consola", MessageBoxButton.OK, MessageBoxImage.Information);
 
                 // Artículo insertado → sincronizar AppSheets (todas las sucursales).
                 ArticulosGeneral.SincronizarAppsheetsTrasCambio();
