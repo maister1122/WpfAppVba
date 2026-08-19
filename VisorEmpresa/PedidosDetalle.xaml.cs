@@ -339,35 +339,10 @@ namespace VisorEmpresa
             return precio;
         }
 
-        // ─── Fecha de la lista de precios (documentoL) vigente más reciente ───
-        // (no "pendiente" y con fecha aplicable al documento que se está armando).
-        private DateTime? ObtenerFechaMaximaListaPrecios()
-        {
-            DateTime fechaDoc = Box_Fecha.SelectedDate ?? DateTime.Today;
-            DateTime? maxima = null;
-            int uf = Sql.DocumentosLObj.ContarFilas;
-            for (int i = 1; i <= uf; i++)
-            {
-                var idObj = Sql.DocumentosLObj.Mover(i);
-                if (idObj == null) continue;
-                string id = idObj.ToString()!;
-                if (Sql.DocumentosLObj.ObtenerItem("estado", id)?.ToString() == "pendiente") continue;
-                var fp = Sql.DocumentosLObj.ObtenerItem("fecha", id);
-                if (fp == null) continue;
-                DateTime fecha = Convert.ToDateTime(fp);
-                if (fecha > fechaDoc) continue;
-                if (maxima == null || fecha > maxima) maxima = fecha;
-            }
-            return maxima;
-        }
-
-        // ─── Precio con aviso de lista de precios no vigente ───────────────────
-        // Busca el precio de cada artículo recibido; si alguno no tiene precio
-        // registrado en la lista de precios más reciente (se usó una lista
-        // anterior, o no hay precio en ninguna), junta los casos en un solo
-        // aviso y pregunta si aplicar el precio anterior encontrado. Si la
-        // respuesta es "No", esos artículos quedan con precio 0.
-        private Dictionary<string, double> ObtenerPreciosConAviso(IEnumerable<(string ArticuloId, string Descripcion)> articulos)
+        // ─── Precio de cada artículo recibido ──────────────────────────────────
+        // Busca el precio más reciente aplicable de cada artículo (sin avisar
+        // si la lista de precios usada no es la más nueva).
+        private Dictionary<string, double> ObtenerPrecios(IEnumerable<(string ArticuloId, string Descripcion)> articulos)
         {
             var unicos = articulos
                 .Where(a => !string.IsNullOrEmpty(a.ArticuloId))
@@ -376,36 +351,8 @@ namespace VisorEmpresa
                 .ToList();
 
             var resultado = new Dictionary<string, double>();
-            if (unicos.Count == 0) return resultado;
-
-            DateTime? fechaMaxima = ObtenerFechaMaximaListaPrecios();
-            var noVigentes = new List<(string Id, string Desc, double Precio, DateTime? Fecha)>();
-
-            foreach (var (id, desc) in unicos)
-            {
-                double precio = ObtenerPrecioArticulo(id, out DateTime? fechaUsada);
-                resultado[id] = precio;
-
-                bool noVigente = fechaMaxima != null &&
-                    (fechaUsada == null || fechaUsada.Value < fechaMaxima.Value);
-                if (noVigente)
-                    noVigentes.Add((id, desc, precio, fechaUsada));
-            }
-
-            if (noVigentes.Count == 0) return resultado;
-
-            string detalle = string.Join("\n", noVigentes.Select(a =>
-                a.Fecha == null
-                    ? $"• {a.Desc}: sin precio registrado"
-                    : $"• {a.Desc}: precio de {a.Fecha.Value.ToString("d")} ({a.Precio.ToString("N2")})"));
-
-            var res = MessageBox.Show(
-                $"Los siguientes artículos no tienen precio en la lista de precios más reciente ({fechaMaxima!.Value.ToString("d")}):\n\n{detalle}\n\n" +
-                "¿Aplicar el precio anterior encontrado en cada caso? Si elige \"No\", quedan con precio 0.",
-                "Consola", MessageBoxButton.YesNo, MessageBoxImage.Warning);
-
-            if (res != MessageBoxResult.Yes)
-                foreach (var a in noVigentes) resultado[a.Id] = 0;
+            foreach (var (id, _) in unicos)
+                resultado[id] = ObtenerPrecioArticulo(id, out _);
 
             return resultado;
         }
@@ -822,7 +769,7 @@ namespace VisorEmpresa
                     fila.ArticuloId  = artId;
                     fila.Codigo      = codigo;
                     fila.Descripcion = ObtenerDescripcionArticulo(artId);
-                    double precio    = ObtenerPreciosConAviso(new[] { (artId, fila.Descripcion) })[artId];
+                    double precio    = ObtenerPrecios(new[] { (artId, fila.Descripcion) })[artId];
                     fila.Precio      = precio;
                     fila.Importe     = precio * fila.Cantidad;
                     fila.Tipo        = "automatico";
@@ -892,7 +839,7 @@ namespace VisorEmpresa
 #if !VISOR
             ArticulosGeneral.OpenAsTab(Window.GetWindow(this)!, arts =>
             {
-                var precios = ObtenerPreciosConAviso(arts.Select(a => (a.Id, a.Descripcion)));
+                var precios = ObtenerPrecios(arts.Select(a => (a.Id, a.Descripcion)));
                 foreach (var art in arts)
                 {
                     double precio = precios[art.Id];
@@ -929,7 +876,7 @@ namespace VisorEmpresa
 
             ArticulosGeneral.OpenAsTab(Window.GetWindow(this)!, null, art =>
             {
-                double precio = ObtenerPreciosConAviso(new[] { (art.Id, art.Descripcion) })[art.Id];
+                double precio = ObtenerPrecios(new[] { (art.Id, art.Descripcion) })[art.Id];
                 PedidoItemFila filaEnfocar;
 
                 if (filaActual != null && _pedidos.Contains(filaActual))
@@ -1068,7 +1015,7 @@ namespace VisorEmpresa
 
         private void BtnActualizarPrecios_Click(object sender, RoutedEventArgs e)
         {
-            var precios = ObtenerPreciosConAviso(_pedidos
+            var precios = ObtenerPrecios(_pedidos
                 .Where(p => !string.IsNullOrEmpty(p.ArticuloId))
                 .Select(p => (p.ArticuloId, p.Descripcion)));
 

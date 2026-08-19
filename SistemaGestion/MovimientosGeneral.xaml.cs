@@ -241,6 +241,7 @@ namespace SistemaGestion
                 lista.Add(new MovimientoFila
                 {
                     Linea      = linea++,
+                    Fecha      = d.Fecha,
                     FechaStr   = d.Fecha != default ? $"{d.Fecha:d} {d.Fecha:HH:mm:ss}" : "-",
                     Movimiento = string.IsNullOrEmpty(d.Documento) || d.Documento == "0"
                                  ? d.Movimiento
@@ -305,6 +306,7 @@ namespace SistemaGestion
     public class MovimientoFila
     {
         public int    Linea      { get; set; }
+        public DateTime Fecha    { get; set; }
         public string FechaStr   { get; set; } = "";
         public string Movimiento { get; set; } = "";
         public string Estado     { get; set; } = "";

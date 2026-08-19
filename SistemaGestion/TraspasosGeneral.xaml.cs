@@ -229,6 +229,7 @@ namespace SistemaGestion
                     Linea           = linea++,
                     DocumentoT      = id,
                     Codigo          = Sql.DocumentosTObj.ObtenerItem("codigo", id)?.ToString() ?? "",
+                    Fecha           = fechaDoc,
                     FechaStr        = $"{fechaDoc:d} {fechaDoc:HH:mm:ss}",
                     Movimiento      = movActual,
                     ContraparteDesc = contraparteDesc,
@@ -343,6 +344,7 @@ namespace SistemaGestion
                 Linea           = linea,
                 DocumentoT      = id,
                 Codigo          = Sql.DocumentosTObj.ObtenerItem("codigo", id)?.ToString() ?? "",
+                Fecha           = fechaDoc,
                 FechaStr        = $"{fechaDoc:d} {fechaDoc:HH:mm:ss}",
                 Movimiento      = esSalida ? "salida" : "entrada",
                 ContraparteDesc = contraparteDesc,
@@ -701,6 +703,7 @@ namespace SistemaGestion
         public int    Linea           { get; set; }
         public string DocumentoT      { get; set; } = "";
         public string Codigo          { get; set; } = "";
+        public DateTime Fecha         { get; set; }
         public string FechaStr        { get; set; } = "";
         public string Movimiento      { get; set; } = "";
         public string ContraparteDesc { get; set; } = "";

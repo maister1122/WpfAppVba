@@ -101,7 +101,7 @@
                 <DataGridTextColumn Header="Código"       Binding="{Binding Codigo}"      Width="80"/>
                 <DataGridTextColumn Header="Descripción"  Binding="{Binding Descripcion}" Width="*"/>
                 <DataGridTextColumn Header="Tipo"         Binding="{Binding Tipo}"        Width="100"/>
-                <DataGridTextColumn Header="Fecha"        Binding="{Binding FechaStr}"    Width="160"/>
+                <DataGridTextColumn Header="Fecha"        Binding="{Binding FechaStr}"    SortMemberPath="Fecha" Width="160"/>
             </DataGrid.Columns>
         </DataGrid>
         </Border>

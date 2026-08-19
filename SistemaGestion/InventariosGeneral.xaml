@@ -99,7 +99,7 @@
             <DataGrid.Columns>
                 <DataGridTextColumn Header="Línea"       Binding="{Binding Linea}"        Width="60"/>
                 <DataGridTextColumn Header="DocumentoI"  Binding="{Binding Codigo}"       Width="90"/>
-                <DataGridTextColumn Header="Fecha"       Binding="{Binding FechaStr}"     Width="*"/>
+                <DataGridTextColumn Header="Fecha"       Binding="{Binding FechaStr}"     SortMemberPath="Fecha" Width="*"/>
                 <DataGridTextColumn Header="Referencia"  Binding="{Binding Referencia}"   Width="150"/>
                 <DataGridTextColumn Header="Cant. Total" Binding="{Binding CantidadTotal, StringFormat=#\,##0.##}" Width="100"
                                     ElementStyle="{StaticResource CeldaNumero}"/>

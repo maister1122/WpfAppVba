@@ -107,6 +107,7 @@ namespace VisorEmpresa
                         Codigo      = codigo,
                         Descripcion = desc,
                         Tipo        = Sql.SucursalesObj.ObtenerItem("tipo", id)?.ToString() ?? "",
+                        Fecha       = ObtenerFecha(id),
                         FechaStr    = FormatearFecha(id)
                     });
                 }
@@ -128,17 +129,23 @@ namespace VisorEmpresa
                 Codigo      = Sql.SucursalesObj.ObtenerItem("codigo",      id)?.ToString() ?? "",
                 Descripcion = Sql.SucursalesObj.ObtenerItem("descripcion", id)?.ToString() ?? "",
                 Tipo        = Sql.SucursalesObj.ObtenerItem("tipo",        id)?.ToString() ?? "",
+                Fecha       = ObtenerFecha(id),
                 FechaStr    = FormatearFecha(id)
             };
+        }
+
+        // ─── Fecha (sin formatear) de una sucursal ─────────────────────────────
+        private DateTime ObtenerFecha(string id)
+        {
+            var fechaObj = Sql.SucursalesObj.ObtenerItem("fecha", id);
+            return fechaObj != null && DateTime.TryParse(fechaObj.ToString(), out DateTime fecha) ? fecha : default;
         }
 
         // ─── Formatea la fecha completa (fecha + hora) de una sucursal ─────────
         private string FormatearFecha(string id)
         {
-            var fechaObj = Sql.SucursalesObj.ObtenerItem("fecha", id);
-            if (fechaObj != null && System.DateTime.TryParse(fechaObj.ToString(), out System.DateTime fecha))
-                return $"{fecha:d} {fecha:HH:mm:ss}";
-            return "";
+            DateTime fecha = ObtenerFecha(id);
+            return fecha != default ? $"{fecha:d} {fecha:HH:mm:ss}" : "";
         }
 
         private void Renumerar()
@@ -303,6 +310,7 @@ namespace VisorEmpresa
         public string Codigo      { get; set; } = "";
         public string Descripcion { get; set; } = "";
         public string Tipo        { get; set; } = "";
+        public DateTime Fecha     { get; set; }
         public string FechaStr    { get; set; } = "";
     }
 }

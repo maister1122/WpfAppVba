@@ -312,6 +312,7 @@ namespace VisorEmpresa
                     Linea        = linea++,
                     DocumentoP   = id,
                     Codigo       = Sql.DocumentosPObj.ObtenerItem("codigo", id)?.ToString() ?? "",
+                    Fecha        = fechaDoc,
                     FechaStr     = $"{fechaDoc:d} {fechaDoc:HH:mm:ss}",
                     Movimiento   = movDoc,
                     SucursalDesc = sucursalDesc,
@@ -583,6 +584,7 @@ namespace VisorEmpresa
         public int    Linea        { get; set; }
         public string DocumentoP   { get; set; } = "";
         public string Codigo       { get; set; } = "";
+        public DateTime Fecha      { get; set; }
         public string FechaStr     { get; set; } = "";
         public string Movimiento   { get; set; } = "";
         public string SucursalDesc { get; set; } = "";

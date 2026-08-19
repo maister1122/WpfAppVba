@@ -159,6 +159,7 @@ namespace SistemaGestion
                     Linea       = linea++,
                     DocumentoP  = id,
                     Codigo      = codigo,
+                    Fecha       = fecha,
                     FechaStr    = fecha != default ? $"{fecha:d} {fecha:HH:mm:ss}" : "",
                     Movimiento  = movDoc,
                     TerceroDesc = terceroDesc,
@@ -479,6 +480,7 @@ namespace SistemaGestion
         public int    Linea       { get; set; }
         public string DocumentoP  { get; set; } = "";
         public string Codigo      { get; set; } = "";
+        public DateTime Fecha     { get; set; }
         public string FechaStr    { get; set; } = "";
         public string Movimiento  { get; set; } = "";
         public string TerceroDesc { get; set; } = "";

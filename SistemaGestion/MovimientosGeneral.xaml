@@ -109,7 +109,7 @@
                   FontSize="11">
             <DataGrid.Columns>
                 <DataGridTextColumn Header="Línea"      Binding="{Binding Linea}"       Width="50"/>
-                <DataGridTextColumn Header="Fecha"      Binding="{Binding FechaStr}"     Width="130"/>
+                <DataGridTextColumn Header="Fecha"      Binding="{Binding FechaStr}"     SortMemberPath="Fecha" Width="130"/>
                 <DataGridTextColumn Header="Movimiento" Binding="{Binding Movimiento}"   Width="*"/>
                 <DataGridTextColumn Header="Cantidad"   Binding="{Binding Cantidad, StringFormat=#\,##0.##}"  Width="70"
                                     ElementStyle="{StaticResource CeldaNumero}"/>

@@ -417,6 +417,7 @@
 
                     <DataGridTextColumn Header="Fecha"
                                         Binding="{Binding FechaStr}"
+                                        SortMemberPath="Fecha"
                                         Width="148"/>
 
                     <DataGridTextColumn Header="Origen/Destino"

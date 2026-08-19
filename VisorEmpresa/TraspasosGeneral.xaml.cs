@@ -285,6 +285,7 @@ namespace VisorEmpresa
                     Linea        = linea++,
                     DocumentoT   = id,
                     Codigo       = Sql.DocumentosTObj.ObtenerItem("codigo", id)?.ToString() ?? "",
+                    Fecha        = fechaDoc,
                     FechaStr     = $"{fechaDoc:d} {fechaDoc:HH:mm:ss}",
                     OrigenDesc   = origenDesc,
                     DestinoDesc  = destinoDesc,
@@ -535,6 +536,7 @@ namespace VisorEmpresa
         public int    Linea       { get; set; }
         public string DocumentoT  { get; set; } = "";
         public string Codigo      { get; set; } = "";
+        public DateTime Fecha     { get; set; }
         public string FechaStr    { get; set; } = "";
         public string OrigenDesc  { get; set; } = "";
         public string DestinoDesc { get; set; } = "";
