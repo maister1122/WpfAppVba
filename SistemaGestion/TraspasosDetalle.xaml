@@ -30,7 +30,7 @@
                                 <Setter Property="Opacity" Value="0.75"/>
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
-                                <Setter Property="Background" Value="#9CA3AF"/>
+                                <Setter Property="Background" Value="#6B7280"/>
                                 <Setter Property="Foreground" Value="White"/>
                                 <Setter Property="Cursor"     Value="Arrow"/>
                             </Trigger>
