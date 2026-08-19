@@ -33,6 +33,11 @@ namespace SistemaGestion
         private bool _iniciado = false;
         private readonly string _tituloTab;
         private string _codigoDocT = "";
+        // Evita guardados duplicados si el usuario hace varios clicks seguidos en
+        // Guardar: Guardar() puede mostrar MessageBox (VerificarConexionParaGuardar,
+        // SinPestañasRelacionadas) cuyo loop de mensajes anidado podría procesar un
+        // segundo click sobre BtnGuardar antes de que el primer guardado termine.
+        private bool _guardando = false;
 
         /// <summary>
         /// ID del documento recién creado (solo en modo "nuevo").
@@ -722,9 +727,20 @@ namespace SistemaGestion
         // ─── Guardar ──────────────────────────────────────────────────────────
         private bool Guardar()
         {
-            if (!SinPestañasRelacionadas()) return false;
-            if (!FuncionesComunes.VerificarConexionParaGuardar(Window.GetWindow(this))) return false;
-            return AppState.EventoFormularioM == "editar" ? GuardarEditar() : GuardarNuevo();
+            if (_guardando) return false;
+            _guardando = true;
+            BtnGuardar.IsEnabled = false;
+            try
+            {
+                if (!SinPestañasRelacionadas()) return false;
+                if (!FuncionesComunes.VerificarConexionParaGuardar(Window.GetWindow(this))) return false;
+                return AppState.EventoFormularioM == "editar" ? GuardarEditar() : GuardarNuevo();
+            }
+            finally
+            {
+                _guardando = false;
+                BtnGuardar.IsEnabled = true;
+            }
         }
 
         // ─── Revisión del código al guardar ───────────────────────────────────
@@ -790,7 +806,6 @@ namespace SistemaGestion
                 Sql.DocumentosTObj.OrdenarData(("fecha", false));
                 Sql.TraspasosObj.OrdenarData(("documentoT", false), ("indice", false));
 
-                MessageBox.Show("Guardado exitoso.", "Consola", MessageBoxButton.OK, MessageBoxImage.Information);
                 _hayCambios = false;
                 DocumentoCreadoId = id;
                 return true;
@@ -840,7 +855,6 @@ namespace SistemaGestion
                 Sql.DocumentosTObj.OrdenarData(("fecha", false));
                 Sql.TraspasosObj.OrdenarData(("documentoT", false), ("indice", false));
 
-                MessageBox.Show("Guardado exitoso.", "Consola", MessageBoxButton.OK, MessageBoxImage.Information);
                 _hayCambios = false;
                 return true;
             }
