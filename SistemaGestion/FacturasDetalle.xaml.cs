@@ -739,7 +739,7 @@ namespace SistemaGestion
             {
                 RefrescarGrid();
                 ActualizarTotales();
-                GridFocusHelper.EnfocarCeldaSeleccionada(GridItems);
+                GridFocusHelper.EnfocarCeldaSeleccionada(GridItems, soloSiElFocoSigueEnLaGrilla: true);
             }), System.Windows.Threading.DispatcherPriority.Background);
         }
 
@@ -849,7 +849,7 @@ namespace SistemaGestion
             {
                 RefrescarGridCobros();
                 ActualizarTotales();
-                GridFocusHelper.EnfocarCeldaSeleccionada(GridCobros);
+                GridFocusHelper.EnfocarCeldaSeleccionada(GridCobros, soloSiElFocoSigueEnLaGrilla: true);
             }), System.Windows.Threading.DispatcherPriority.Background);
         }
 

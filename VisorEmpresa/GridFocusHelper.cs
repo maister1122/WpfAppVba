@@ -13,10 +13,22 @@ namespace VisorEmpresa
         // Diferido a DispatcherPriority.Background para correr después de que WPF
         // restaure el foco propio al cerrar un ShowDialog(), y establece CurrentCell
         // explícitamente para que ArrowUp/ArrowDown vuelvan a navegar.
-        internal static void EnfocarCeldaSeleccionada(DataGrid grid)
+        //
+        // soloSiElFocoSigueEnLaGrilla: por defecto false (comportamiento de siempre,
+        // usado tras Nuevo/Insertar/Eliminar/Duplicar línea, donde el foco DEBE saltar
+        // desde el botón clickeado hacia adentro de la grilla). Pasar true solo desde
+        // callbacks diferidos que compiten con un click del usuario en OTRO control
+        // (p. ej. CellEditEnding, que ya se dispara dentro de un Dispatcher.BeginInvoke
+        // propio): si para cuando esta llamada corre el foco ya se movió fuera de la
+        // grilla —el usuario clickeó Guardar, un TextBox de cabecera, etc.— no se lo
+        // robamos de vuelta (si no, un click a otro control quedaba enfocado un
+        // instante y de inmediato perdía el foco otra vez).
+        internal static void EnfocarCeldaSeleccionada(DataGrid grid, bool soloSiElFocoSigueEnLaGrilla = false)
         {
             grid.Dispatcher.BeginInvoke(new Action(() =>
             {
+                if (soloSiElFocoSigueEnLaGrilla && !grid.IsKeyboardFocusWithin) return;
+
                 var item = grid.SelectedItem;
                 if (item == null) { grid.Focus(); return; }
 

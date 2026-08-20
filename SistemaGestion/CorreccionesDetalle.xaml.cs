@@ -531,7 +531,7 @@ namespace SistemaGestion
             Dispatcher.BeginInvoke(new Action(() =>
             {
                 RefrescarGrid();
-                GridFocusHelper.EnfocarCeldaSeleccionada(GridItems);
+                GridFocusHelper.EnfocarCeldaSeleccionada(GridItems, soloSiElFocoSigueEnLaGrilla: true);
             }), System.Windows.Threading.DispatcherPriority.Background);
         }
 

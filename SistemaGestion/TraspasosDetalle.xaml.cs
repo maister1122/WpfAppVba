@@ -661,7 +661,7 @@ namespace SistemaGestion
                 {
                     RefrescarGrid();
                     NotificarStockInsuficiente(fila);
-                    GridFocusHelper.EnfocarCeldaSeleccionada(GridItems);
+                    GridFocusHelper.EnfocarCeldaSeleccionada(GridItems, soloSiElFocoSigueEnLaGrilla: true);
                 }), System.Windows.Threading.DispatcherPriority.Background);
                 return;
             }
@@ -683,7 +683,7 @@ namespace SistemaGestion
                 {
                     RefrescarGrid();
                     NotificarStockInsuficiente(filaCant);
-                    GridFocusHelper.EnfocarCeldaSeleccionada(GridItems);
+                    GridFocusHelper.EnfocarCeldaSeleccionada(GridItems, soloSiElFocoSigueEnLaGrilla: true);
                 }), System.Windows.Threading.DispatcherPriority.Background);
                 return;
             }
@@ -691,7 +691,7 @@ namespace SistemaGestion
             Dispatcher.BeginInvoke(new Action(() =>
             {
                 RefrescarGrid();
-                GridFocusHelper.EnfocarCeldaSeleccionada(GridItems);
+                GridFocusHelper.EnfocarCeldaSeleccionada(GridItems, soloSiElFocoSigueEnLaGrilla: true);
             }), System.Windows.Threading.DispatcherPriority.Background);
         }
 

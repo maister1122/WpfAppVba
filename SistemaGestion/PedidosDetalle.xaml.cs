@@ -793,7 +793,7 @@ namespace SistemaGestion
                 ActualizarTotales();
                 if (colNombre == "Código" || colNombre == "Cantidad")
                     VerificarStockVenta();
-                GridFocusHelper.EnfocarCeldaSeleccionada(GridItems);
+                GridFocusHelper.EnfocarCeldaSeleccionada(GridItems, soloSiElFocoSigueEnLaGrilla: true);
             }), System.Windows.Threading.DispatcherPriority.Background);
         }
 
@@ -1034,7 +1034,7 @@ namespace SistemaGestion
                 RefrescarGridTrasacciones();
                 CargarTotalesDivisas();
                 CargarEstadosCuenta();
-                GridFocusHelper.EnfocarCeldaSeleccionada(GridTrasacciones);
+                GridFocusHelper.EnfocarCeldaSeleccionada(GridTrasacciones, soloSiElFocoSigueEnLaGrilla: true);
             }), System.Windows.Threading.DispatcherPriority.Background);
         }
 
@@ -1154,7 +1154,7 @@ namespace SistemaGestion
             {
                 RefrescarGridEntregas();
                 if (AppState.TipoPedido.ToLower() == "normal") CargarEstados();
-                GridFocusHelper.EnfocarCeldaSeleccionada(GridEntregas);
+                GridFocusHelper.EnfocarCeldaSeleccionada(GridEntregas, soloSiElFocoSigueEnLaGrilla: true);
             }), System.Windows.Threading.DispatcherPriority.Background);
         }
 
