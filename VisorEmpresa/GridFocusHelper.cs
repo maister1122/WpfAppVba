@@ -55,6 +55,31 @@ namespace VisorEmpresa
             }), System.Windows.Threading.DispatcherPriority.Background);
         }
 
+        // Reasigna el ItemsSource de una grilla auxiliar (categorías, stock, precios)
+        // preservando la fila seleccionada y el foco de teclado.
+        //
+        // Reasignar ItemsSource reconstruye TODAS las celdas del DataGrid: si el
+        // usuario tenía el foco puesto ahí, se destruye y no vuelve solo. Estas
+        // grillas se recargan como efecto colateral de editar una línea en la grilla
+        // principal (RefrescarGrid → CargarTotales/CargarStock/CargarPrecios), así
+        // que sin esto el click del usuario sobre ellas se perdía apenas terminaba
+        // de confirmarse la edición de una celda.
+        //
+        // La restauración es por índice: estas listas se reconstruyen siempre en el
+        // mismo orden determinístico, así que el índice identifica la misma fila.
+        internal static void ReasignarItemsSource(DataGrid grid, System.Collections.IEnumerable? origen)
+        {
+            bool teniaFoco = grid.IsKeyboardFocusWithin;
+            int  idxPrevio = grid.SelectedIndex;
+
+            grid.ItemsSource = origen;
+
+            if (idxPrevio >= 0 && idxPrevio < grid.Items.Count)
+                grid.SelectedIndex = idxPrevio;
+
+            if (teniaFoco) EnfocarCeldaSeleccionada(grid);
+        }
+
         // Selecciona todo el texto de la celda que acaba de entrar en edición.
         // Acepta el EditingElement del DataGrid: si es un TextBox (DataGridTextColumn)
         // lo usa directo; si es un contenedor (DataGridTemplateColumn) busca el TextBox

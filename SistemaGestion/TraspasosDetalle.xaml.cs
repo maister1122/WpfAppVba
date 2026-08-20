@@ -383,16 +383,7 @@ namespace SistemaGestion
                 .ToList();
             filas.Add(new CategoriaCantFila { Categoria = "Otros", Cantidad = cantOtros.ToString("N0") });
 
-            // Igual que GridItems más arriba: reasignar ItemsSource reconstruye las
-            // celdas de GridCategorias y, si el usuario tiene el foco puesto ahí (lo
-            // clickeó después de editar una línea), se lo destruye sin restaurarlo —
-            // por eso se preserva selección + foco tal como ya se hace con GridItems.
-            bool teniaFoco = GridCategorias.IsKeyboardFocusWithin;
-            string? catSeleccionada = (GridCategorias.SelectedItem as CategoriaCantFila)?.Categoria;
-            GridCategorias.ItemsSource = filas;
-            var restaurar = filas.FirstOrDefault(f => f.Categoria == catSeleccionada);
-            if (restaurar != null) GridCategorias.SelectedItem = restaurar;
-            if (teniaFoco) GridFocusHelper.EnfocarCeldaSeleccionada(GridCategorias);
+            GridFocusHelper.ReasignarItemsSource(GridCategorias, filas);
         }
 
         // ─── Stock del artículo seleccionado (GridStock / Lista3) ─────────────
@@ -400,13 +391,13 @@ namespace SistemaGestion
         {
             if (fila == null || string.IsNullOrEmpty(fila.ArticuloId))
             {
-                GridStock.ItemsSource = null;
+                GridFocusHelper.ReasignarItemsSource(GridStock, null);
                 return;
             }
 
             double stock = StockCalculator.ContarStock(fila.ArticuloId, AppState.DataFechaFinal);
 
-            GridStock.ItemsSource = new List<TraspasoStockFila>
+            GridFocusHelper.ReasignarItemsSource(GridStock, new List<TraspasoStockFila>
             {
                 new TraspasoStockFila
                 {
@@ -414,7 +405,7 @@ namespace SistemaGestion
                     Disponible = stock.ToString("N0"),
                     Stock      = stock.ToString("N0")
                 }
-            };
+            });
         }
 
         // ─── Notificación de stock insuficiente (solo salidas, modo nuevo) ────

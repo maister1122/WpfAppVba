@@ -549,16 +549,7 @@ namespace SistemaGestion
 
             filas.Add(new CategoriaCantFila { Categoria = "Otros", Cantidad = cantOtros.ToString("N0") });
 
-            // Reasignar ItemsSource reconstruye las celdas de "destino" y, si el
-            // usuario tiene el foco puesto ahí (lo clickeó después de editar una
-            // línea), se lo destruye sin restaurarlo — se preserva selección + foco
-            // igual que se hace con GridItems/GridTrasacciones/GridEntregas.
-            bool teniaFoco = destino.IsKeyboardFocusWithin;
-            string? catSeleccionada = (destino.SelectedItem as CategoriaCantFila)?.Categoria;
-            destino.ItemsSource = filas;
-            var restaurar = filas.FirstOrDefault(f => f.Categoria == catSeleccionada);
-            if (restaurar != null) destino.SelectedItem = restaurar;
-            if (teniaFoco) GridFocusHelper.EnfocarCeldaSeleccionada(destino);
+            GridFocusHelper.ReasignarItemsSource(destino, filas);
         }
 
         private void CargarEstados()
@@ -601,10 +592,12 @@ namespace SistemaGestion
         // ─── Stock y precios del artículo seleccionado ────────────────────────
         private void CargarStockYPrecios(PedidoItemFila? fila)
         {
-            GridPrecios.ItemsSource = null;
-            GridStock.ItemsSource   = null;
-
-            if (fila == null || string.IsNullOrEmpty(fila.ArticuloId)) return;
+            if (fila == null || string.IsNullOrEmpty(fila.ArticuloId))
+            {
+                GridFocusHelper.ReasignarItemsSource(GridPrecios, null);
+                GridFocusHelper.ReasignarItemsSource(GridStock,   null);
+                return;
+            }
 
             // Precios
             var precios = new List<PrecioFila>();
@@ -628,15 +621,15 @@ namespace SistemaGestion
                     Precio = precioVal.ToString("N2")
                 });
             }
-            GridPrecios.ItemsSource = precios;
+            GridFocusHelper.ReasignarItemsSource(GridPrecios, precios);
 
             // Stock
             double stockTotal = StockCalculator.ContarStock(fila.ArticuloId, AppState.DataFechaFinal);
             double stockDisp  = StockCalculator.ContarStock(fila.ArticuloId, DateTime.Now);
-            GridStock.ItemsSource = new List<StockFila>
+            GridFocusHelper.ReasignarItemsSource(GridStock, new List<StockFila>
             {
                 new() { Codigo = fila.Codigo, Disponible = stockDisp.ToString("N0"), Stock = stockTotal.ToString("N0") }
-            };
+            });
         }
 
         // ─── Notificación de stock insuficiente (solo ventas, modo nuevo) ─────
