@@ -41,6 +41,10 @@ namespace SistemaGestion
         // de que el click llegue al control real), se evita esa carrera.
         private void UserControl_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
+            // Registrar a qué grilla apunta el click ANTES de confirmar (ver
+            // GridFocusHelper.RegistrarClick).
+            GridFocusHelper.RegistrarClick(e.OriginalSource as DependencyObject);
+
             if (Grid1.IsKeyboardFocusWithin)
                 Grid1.CommitEdit(DataGridEditingUnit.Row, true);
         }
