@@ -41,6 +41,16 @@
             <Setter Property="Background" Value="#3B82F6"/>
             <Setter Property="Foreground" Value="White"/>
         </Style>
+        <!-- BtnGuardar: se pone plomo apenas se lo presiona (feedback inmediato de que
+             el click se registró), sin esperar a que termine el guardado. -->
+        <Style x:Key="BtnGuardarPrimario" TargetType="Button" BasedOn="{StaticResource BtnPrimario}">
+            <Style.Triggers>
+                <Trigger Property="IsPressed" Value="True">
+                    <Setter Property="Background" Value="#9CA3AF"/>
+                    <Setter Property="Foreground" Value="White"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
         <Style x:Key="BtnSecundario" TargetType="Button" BasedOn="{StaticResource BtnBase}">
             <Setter Property="Background"      Value="{DynamicResource ThemeBtnSecBg}"/>
             <Setter Property="Foreground"      Value="{DynamicResource ThemeBtnSecFg}"/>
@@ -196,7 +206,7 @@
                                 Click="BtnCancelar_Click"/>
                         <Button x:Name="BtnGuardar" Content="💾 Guardar"
                                 Height="30" FontWeight="SemiBold"
-                                Style="{StaticResource BtnPrimario}"
+                                Style="{StaticResource BtnGuardarPrimario}"
                                 Click="BtnGuardar_Click"/>
                     </StackPanel>
                 </Grid>
