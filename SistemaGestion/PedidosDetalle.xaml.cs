@@ -1625,6 +1625,16 @@ namespace SistemaGestion
             GridEntregas.CommitEdit(DataGridEditingUnit.Row, true);
         }
 
+        // ─── Confirmar edición pendiente antes de que el click llegue a su destino ──
+        // Bug conocido de WPF DataGrid: si una celda de un grid editable está en
+        // edición y se hace click en OTRO control (Guardar, un TextBox de cabecera),
+        // el CommitEdit del grid recién se dispara al procesar ESE MISMO click — lo
+        // que descarta el click en curso y obliga a hacer uno segundo para que el
+        // foco realmente llegue al control de destino. Confirmando acá, en el túnel
+        // (se ejecuta ANTES de que el click llegue al control real), se evita esa carrera.
+        private void UserControl_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+            => CommitEdicionesPendientes();
+
         // Llamado por el botón X del overlay para verificar cambios antes de cerrar
         public void IntentarCerrar()
         {

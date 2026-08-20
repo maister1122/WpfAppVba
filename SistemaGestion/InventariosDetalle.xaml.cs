@@ -32,6 +32,19 @@ namespace SistemaGestion
         // Evita guardados duplicados por clicks repetidos en Guardar (ver TraspasosDetalle).
         private bool _guardando = false;
 
+        // ─── Confirmar edición pendiente antes de que el click llegue a su destino ──
+        // Bug conocido de WPF DataGrid: si una celda de Grid1 está en edición y se
+        // hace click en OTRO control (Guardar, un TextBox de cabecera), el CommitEdit
+        // del grid recién se dispara al procesar ESE MISMO click — lo que descarta
+        // el click en curso y obliga a hacer uno segundo para que el foco realmente
+        // llegue al control de destino. Confirmando acá, en el túnel (se ejecuta ANTES
+        // de que el click llegue al control real), se evita esa carrera.
+        private void UserControl_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (Grid1.IsKeyboardFocusWithin)
+                Grid1.CommitEdit(DataGridEditingUnit.Row, true);
+        }
+
         // Modo de filtro activo: "todos" (carga inicial) | "busqueda" (TxtBuscar) | "familia" (Tree1)
         private string _modoFiltro = "todos";
 
