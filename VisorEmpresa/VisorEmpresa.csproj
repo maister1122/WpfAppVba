@@ -14,7 +14,7 @@
          había publicado ninguna versión nueva del visor todavía, así que se reinicia
          la numeración desde acá. -->
 
-    <Version>1.0.6</Version>
+    <Version>1.0.7</Version>
 
     <!-- Símbolo de compilación exclusivo del visor: los formularios Detalle
          vinculados (PedidosDetalle, etc.) usan #if !VISOR alrededor de los
