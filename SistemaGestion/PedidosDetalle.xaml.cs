@@ -548,7 +548,17 @@ namespace SistemaGestion
                 .ToList();
 
             filas.Add(new CategoriaCantFila { Categoria = "Otros", Cantidad = cantOtros.ToString("N0") });
+
+            // Reasignar ItemsSource reconstruye las celdas de "destino" y, si el
+            // usuario tiene el foco puesto ahí (lo clickeó después de editar una
+            // línea), se lo destruye sin restaurarlo — se preserva selección + foco
+            // igual que se hace con GridItems/GridTrasacciones/GridEntregas.
+            bool teniaFoco = destino.IsKeyboardFocusWithin;
+            string? catSeleccionada = (destino.SelectedItem as CategoriaCantFila)?.Categoria;
             destino.ItemsSource = filas;
+            var restaurar = filas.FirstOrDefault(f => f.Categoria == catSeleccionada);
+            if (restaurar != null) destino.SelectedItem = restaurar;
+            if (teniaFoco) GridFocusHelper.EnfocarCeldaSeleccionada(destino);
         }
 
         private void CargarEstados()
