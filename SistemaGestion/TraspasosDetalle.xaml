@@ -206,9 +206,10 @@
                         <ColumnDefinition Width="96"/>
                     </Grid.ColumnDefinitions>
 
-                    <!-- Doc. Traspaso -->
+                    <!-- Doc. Traspaso — el texto lo reescribe ActualizarNomenclatura()
+                         según el movimiento: Doc. Salida / Doc. Entrada. -->
                     <StackPanel Grid.Column="0">
-                        <TextBlock Text="Doc. Traspaso" Style="{StaticResource LblMuted}"/>
+                        <TextBlock x:Name="LblDocTipo" Text="Doc. Traspaso" Style="{StaticResource LblMuted}"/>
                         <TextBox x:Name="Box_DocumentoT" Style="{StaticResource ModernInput}"
                                  PreviewTextInput="Box_Numeros_PreviewTextInput"
                                  TextChanged="Campo_TextChanged"/>
@@ -283,7 +284,7 @@
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                <TextBlock Grid.Column="0" Text="Artículos del traspaso"
+                <TextBlock x:Name="LblArticulosDe" Grid.Column="0" Text="Artículos del traspaso"
                            FontSize="11" FontWeight="SemiBold"
                            Foreground="{DynamicResource ThemeTextoSec}"
                            VerticalAlignment="Center"/>

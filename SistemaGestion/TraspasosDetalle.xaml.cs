@@ -58,6 +58,13 @@ namespace SistemaGestion
         public void CambiarTipoMovimiento(string tipo)
         {
             AppState.TipoMovimiento = tipo.ToLower();
+            // Refrescar los textos: antes solo cambiaba el estado y las etiquetas
+            // quedaban mostrando el movimiento anterior.
+            if (!_iniciado) return;
+            LblTitulo.Text = AppState.TipoMovimiento == "salida"
+                ? "Salida de Productos"
+                : "Entrada de Productos";
+            ActualizarNomenclatura(AppState.TipoMovimiento);
         }
 
         // ─── Confirmar edición pendiente antes de que el click llegue a su destino ──
@@ -79,6 +86,17 @@ namespace SistemaGestion
                 GridItems.CommitEdit(DataGridEditingUnit.Row, true);
         }
 
+        // ─── Nomenclatura visible según el movimiento ─────────────────────────
+        // El formulario es el mismo para entradas y salidas, así que las etiquetas
+        // genéricas ("Doc. Traspaso", "Artículos del traspaso") se reescriben con
+        // el nombre que corresponde. "Entrada"/"Salida" son femeninos: "de la".
+        private void ActualizarNomenclatura(string tipo)
+        {
+            string nombre = tipo == "salida" ? "Salida" : "Entrada";
+            LblDocTipo.Text     = $"Doc. {nombre}";
+            LblArticulosDe.Text = $"Artículos de la {nombre.ToLower()}";
+        }
+
         // ─── Carga inicial ────────────────────────────────────────────────────
         private void CargarUserform()
         {
@@ -88,6 +106,7 @@ namespace SistemaGestion
             LblTitulo.Text = tipo == "salida"
                 ? "Salida de Productos"
                 : "Entrada de Productos";
+            ActualizarNomenclatura(tipo);
 
             CargarComboSucursales();
 

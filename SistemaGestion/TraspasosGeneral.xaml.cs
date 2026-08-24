@@ -255,6 +255,7 @@ namespace SistemaGestion
                 "entrada" => "Entradas de Productos",
                 _         => "Traspasos (Entradas y Salidas)"
             };
+            ActualizarNomenclatura();
             int año = AppState.DataFechaFinal.Year > 2000
                 ? AppState.DataFechaFinal.Year
                 : DateTime.Now.Year;
@@ -297,6 +298,33 @@ namespace SistemaGestion
                 "salidas"  => "salida",
                 _          => ""
             };
+        }
+
+        // ─── Nomenclatura visible según la sección activa ─────────────────────
+        // La barra lateral fija la sección (Entradas / Salidas): ahí los textos
+        // deben hablar de "entrada"/"salida", no del genérico "traspaso". Solo el
+        // listado combinado (sin sección fija y sin filtro de movimiento) sigue
+        // diciendo "traspaso". "Entrada" y "Salida" son femeninos y "Traspaso"
+        // masculino, así que el artículo también cambia ("Nueva" vs "Nuevo").
+        private string NombreDoc => ObtenerFiltroTipo() switch
+        {
+            "salida"  => "Salida",
+            "entrada" => "Entrada",
+            _         => "Traspaso"
+        };
+
+        private bool EsFemenino => NombreDoc != "Traspaso";
+
+        /// <summary>"Nueva Salida" / "Nueva Entrada" / "Nuevo Traspaso".</summary>
+        private string TituloNuevoDoc => $"{(EsFemenino ? "Nueva" : "Nuevo")} {NombreDoc}";
+
+        /// <summary>"esta salida" / "esta entrada" / "este traspaso".</summary>
+        private string EsteDocMinus => $"{(EsFemenino ? "esta" : "este")} {NombreDoc.ToLower()}";
+
+        // Refresca los textos que dependen de la sección/filtro activo.
+        private void ActualizarNomenclatura()
+        {
+            if (BtnNuevo != null) BtnNuevo.Content = TituloNuevoDoc;
         }
 
         // ─── Filtro de estado (4 opciones igual que VBA) ─────────────────────
@@ -514,7 +542,10 @@ namespace SistemaGestion
             AppState.TipoMovimiento = string.IsNullOrEmpty(filtroTipo) ? "entrada" : filtroTipo;
             var consola = Window.GetWindow(this) as ConsolaMovimientos;
             if (consola == null) return;
-            string titulo = "Nuevo Traspaso";
+            // El título sigue al movimiento REAL del documento que se está creando
+            // (AppState.TipoMovimiento), no al filtro: si se llega por un acceso
+            // rápido del top bar, el tipoMovimiento recibido manda.
+            string titulo = AppState.TipoMovimiento == "salida" ? "Nueva Salida" : "Nueva Entrada";
             var dlg = new TraspasosDetalle(this, tituloTab: titulo);
             dlg.Cerrando += () =>
             {
@@ -526,7 +557,11 @@ namespace SistemaGestion
                 Grid1.SelectedItem = nueva; Grid1.ScrollIntoView(nueva);
                 GridFocusHelper.EnfocarCeldaSeleccionada(Grid1);
             };
-            consola.AbrirPestaña(titulo, dlg, "nuevo-traspaso");
+            // La clave incluye el movimiento: con una sola clave compartida, abrir
+            // "Nueva Entrada" teniendo abierta una "Nueva Salida" reutilizaba esa
+            // pestaña (AbrirPestaña hace match por clave) y caías en el formulario
+            // equivocado.
+            consola.AbrirPestaña(titulo, dlg, $"nuevo-traspaso-{AppState.TipoMovimiento}");
         }
 
         private void BtnEditar_Click(object sender, RoutedEventArgs e)
@@ -547,7 +582,7 @@ namespace SistemaGestion
             // Verificación de conexión en 2 capas antes de persistir el borrado.
             if (!FuncionesComunes.VerificarConexionParaGuardar(Window.GetWindow(this))) return;
 
-            var res = MessageBox.Show("¿Eliminar este traspaso y todos sus artículos?", "Consola",
+            var res = MessageBox.Show($"¿Eliminar {EsteDocMinus} y todos sus artículos?", "Consola",
                 MessageBoxButton.YesNo, MessageBoxImage.Question);
             if (res != MessageBoxResult.Yes) return;
 
@@ -678,7 +713,11 @@ namespace SistemaGestion
             AppState.TipoMovimiento = origenDoc == AppState.SucursalActiva ? "salida" : "entrada";
             var consola = Window.GetWindow(this) as ConsolaMovimientos;
             if (consola == null) return;
-            var dlg = new TraspasosDetalle(this, docSel, tituloTab: $"Traspaso {fila.Codigo}");
+            // El título usa el movimiento REAL del documento (ya resuelto arriba en
+            // AppState.TipoMovimiento), no el filtro activo: en el listado combinado
+            // conviven entradas y salidas y cada pestaña debe decir lo que es.
+            string tituloDoc = $"{(AppState.TipoMovimiento == "salida" ? "Salida" : "Entrada")} {fila.Codigo}";
+            var dlg = new TraspasosDetalle(this, docSel, tituloTab: tituloDoc);
             dlg.Cerrando += () =>
             {
                 consola.CerrarPestaña(dlg);
@@ -693,7 +732,7 @@ namespace SistemaGestion
                 }
                 GridFocusHelper.EnfocarCeldaSeleccionada(Grid1);
             };
-            consola.AbrirPestaña($"Traspaso {fila.Codigo}", dlg, $"traspaso-{docSel}");
+            consola.AbrirPestaña(tituloDoc, dlg, $"traspaso-{docSel}");
         }
     }
 

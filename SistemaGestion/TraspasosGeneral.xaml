@@ -339,6 +339,8 @@
                                 Style="{StaticResource BtnBase}"
                                 Margin="0,0,6,0"
                                 Click="BtnEntregarTodos_Click"/>
+                        <!-- El texto lo reescribe ActualizarNomenclatura() según la
+                             sección/filtro activo: Nueva Salida / Nueva Entrada. -->
                         <Button x:Name="BtnNuevo"
                                 Content="Nuevo Traspaso"
                                 Style="{StaticResource BtnPrimario}"

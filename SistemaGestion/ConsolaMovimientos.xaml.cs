@@ -645,10 +645,15 @@ namespace SistemaGestion
             return null;
         }
 
-        private TraspasosDetalle? BuscarTabTraspasoRapido()
+        // Entradas y Salidas tienen ahora su propia pestaña "nuevo" (clave
+        // "nuevo-traspaso-{tipo}"), así que la búsqueda es por tipo. Antes las dos
+        // compartían la clave "nuevo-traspaso": había una sola pestaña y el acceso
+        // rápido del otro tipo la reutilizaba dándola vuelta con
+        // CambiarTipoMovimiento, lo que dejaba el título de la pestaña desactualizado.
+        private TraspasosDetalle? BuscarTabTraspasoRapido(string tipo)
         {
             foreach (TabItem t in TabContenido.Items)
-                if (t.Tag as string == "nuevo-traspaso" && t.Content is TraspasosDetalle td) return td;
+                if (t.Tag as string == $"nuevo-traspaso-{tipo}" && t.Content is TraspasosDetalle td) return td;
             return null;
         }
 
@@ -674,8 +679,10 @@ namespace SistemaGestion
         {
             MostrarPanel("salidas");
             MarcarActivo(BtnNav_Salidas);
-            var existing = BuscarTabTraspasoRapido();
-            if (existing != null) { existing.CambiarTipoMovimiento("salida"); foreach (TabItem t in TabContenido.Items) if (t.Content == existing) { TabContenido.SelectedItem = t; break; } }
+            // La pestaña encontrada ya es de este tipo (la clave lo incluye): solo
+            // hay que seleccionarla, no darla vuelta.
+            var existing = BuscarTabTraspasoRapido("salida");
+            if (existing != null) { foreach (TabItem t in TabContenido.Items) if (t.Content == existing) { TabContenido.SelectedItem = t; break; } }
             else _panelSalidas.AbrirNuevoTraspaso("salida");
         }
 
@@ -683,8 +690,10 @@ namespace SistemaGestion
         {
             MostrarPanel("entradas");
             MarcarActivo(BtnNav_Entradas);
-            var existing = BuscarTabTraspasoRapido();
-            if (existing != null) { existing.CambiarTipoMovimiento("entrada"); foreach (TabItem t in TabContenido.Items) if (t.Content == existing) { TabContenido.SelectedItem = t; break; } }
+            // La pestaña encontrada ya es de este tipo (la clave lo incluye): solo
+            // hay que seleccionarla, no darla vuelta.
+            var existing = BuscarTabTraspasoRapido("entrada");
+            if (existing != null) { foreach (TabItem t in TabContenido.Items) if (t.Content == existing) { TabContenido.SelectedItem = t; break; } }
             else _panelEntradas.AbrirNuevoTraspaso("entrada");
         }
 
