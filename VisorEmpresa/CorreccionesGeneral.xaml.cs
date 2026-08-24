@@ -299,9 +299,9 @@ namespace VisorEmpresa
             TxtTotalEgresos.Text    = lista.Count(f => f.Movimiento == "retirado").ToString();
             LblTipoMovimiento.Text = tipoMov switch
             {
-                "retirado" => "Retirados de Stock (pérdida, merma, hurto, consumo interno)",
-                "repuesta" => "Repuestas de Stock (error de registro, registros omitidos)",
-                _          => "Correcciones de Stock (Repuestas y Retirados)"
+                "retirado" => "Egresos de Stock (pérdida, merma, hurto, consumo interno)",
+                "repuesta" => "Ingresos de Stock (error de registro, registros omitidos)",
+                _          => "Correcciones de Stock (Ingresos y Egresos)"
             };
             int año = VisorState.AnioActivo;
             LblSubtitulo.Text = string.IsNullOrEmpty(_mesActivo)
@@ -324,6 +324,17 @@ namespace VisorEmpresa
                 "repuesta" or "ingreso" => "repuesta",
                 _                       => ""
             };
+
+        // ─── Nomenclatura visible según el movimiento ─────────────────────────
+        // Se MUESTRAN como Ingreso/Egreso (igual que en la app principal); el valor
+        // almacenado sigue siendo "repuesta"/"retirado", que es lo que leen las
+        // consultas de stock y NormalizarMovimiento.
+        private static string NombreDocDe(string movimiento) => NormalizarMovimiento(movimiento) switch
+        {
+            "repuesta" => "Ingreso",
+            "retirado" => "Egreso",
+            _          => "Corrección"
+        };
 
         // El movimiento lo fija la sección del panel lateral; vacío = los dos juntos.
         private string ObtenerFiltroTipo() => TipoMovimiento;
@@ -448,7 +459,9 @@ namespace VisorEmpresa
             if (consola == null) return;
 
             AppState.EventoFormularioC = "editar";
-            string titulo = $"Corrección {fila.Codigo}";
+            // El título sigue al movimiento REAL del documento, no al filtro: el
+            // listado combinado mezcla los dos.
+            string titulo = $"{NombreDocDe(fila.Movimiento)} {fila.Codigo}";
             var dlg = new CorreccionesDetalle(null, fila.Id, tituloTab: titulo);
             dlg.Cerrando += () => consola.CerrarPestaña(dlg);
             consola.AbrirPestaña(titulo, dlg, $"correccion-{fila.Id}");

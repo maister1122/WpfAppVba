@@ -338,16 +338,42 @@ namespace SistemaGestion
         private string EsteDocMinus =>
             $"{(EsFemeninoDe(NombreDoc) ? "esta" : "este")} {NombreDoc.ToLower()}";
 
+        /// <summary>Movimiento del PEDIDO que se valida desde esta sección
+        /// ("compra"/"venta"; "" en el listado combinado). El criterio es el de la
+        /// mercadería, no el del dinero: una compra entra (ingreso) y una venta
+        /// sale (egreso).</summary>
+        private static string MovimientoPedidoDe(string movimiento) => movimiento switch
+        {
+            "ingreso" => "compra",
+            "egreso"  => "venta",
+            _         => ""
+        };
+
         // Refresca los textos que dependen de la sección activa.
         private void ActualizarNomenclatura()
         {
-            LblTitulo.Text = ObtenerFiltroTipo() switch
+            string mov = ObtenerFiltroTipo();
+            LblTitulo.Text = mov switch
             {
                 "ingreso" => "Créditos",
                 "egreso"  => "Débitos",
                 _         => "Facturas"
             };
-            if (BtnNuevo != null) BtnNuevo.Content = TituloNuevoDocDe(ObtenerFiltroTipo());
+            if (BtnNuevo != null) BtnNuevo.Content = TituloNuevoDocDe(mov);
+
+            // "Validar compra" / "Validar venta": el botón nombra el pedido que se
+            // valida, no la factura que se crea.
+            if (BtnValidarPedido != null)
+            {
+                string movPedido = MovimientoPedidoDe(mov);
+                string nombre    = NombreDocDe(mov);
+                bool   fem       = EsFemeninoDe(nombre);
+                BtnValidarPedido.Content = movPedido == "" ? "Validar pedido"
+                                                           : $"Validar {movPedido}";
+                BtnValidarPedido.ToolTip = movPedido == ""
+                    ? "Crea una factura nueva a partir de un pedido"
+                    : $"Crea {(fem ? "una" : "un")} {nombre.ToLower()} {(fem ? "nueva" : "nuevo")} a partir de una {movPedido}";
+            }
         }
 
         // ─── Nombre de mes ────────────────────────────────────────────────────
@@ -496,15 +522,7 @@ namespace SistemaGestion
             ValidarPedido.LineasValidadas = null;
             string contexto = TipoMovimiento == "egreso"  ? "Facturas de Débitos"
                               : TipoMovimiento == "ingreso" ? "Facturas de Créditos" : "Facturas";
-            // Los pedidos siguen siendo venta/compra. El criterio es el de la
-            // mercadería, no el del dinero: una compra entra (ingreso) y una venta
-            // sale (egreso).
-            string movPedido = TipoMovimiento switch
-            {
-                "ingreso" => "compra",
-                "egreso"  => "venta",
-                _         => ""
-            };
+            string movPedido = MovimientoPedidoDe(TipoMovimiento);
             ValidarPedido.OpenAsDialog(consola, contexto: contexto, llamador: this,
                                        movimiento: movPedido, onCerrado: () =>
             {

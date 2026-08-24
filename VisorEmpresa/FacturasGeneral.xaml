@@ -255,7 +255,8 @@
                     </Grid.ColumnDefinitions>
 
                     <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                        <TextBlock Text="Facturas"
+                        <TextBlock x:Name="LblTitulo"
+                                   Text="Facturas"
                                    FontSize="15" FontWeight="SemiBold"
                                    Foreground="{DynamicResource ThemeTexto}"/>
                         <TextBlock x:Name="LblSubtitulo"

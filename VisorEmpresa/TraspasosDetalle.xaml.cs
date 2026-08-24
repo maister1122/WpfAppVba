@@ -116,7 +116,8 @@ namespace VisorEmpresa
             // Solo lectura siempre (AplicarModoSoloLectura se aplica igual más abajo):
             // a diferencia de la app principal, no hay "esLocal" — AppState.SucursalActiva
             // no existe en el visor. El estado se muestra tal cual, sin la reinterpretación
-            // "pendiente revisar" (mismo criterio ya usado en VisorEmpresa.TraspasosGeneral).
+            // "pendiente revisar" (mismo criterio ya usado en VisorEmpresa.TraspasosGeneral):
+            // por eso el combo solo ofrece "pendiente"/"entregado".
             string estadoDB = Sql.DocumentosTObj.ObtenerItem("estado", _idEditar)?.ToString() ?? "pendiente";
             DeshabilitarControlesCabecera();
             SeleccionarEstado(estadoDB);
@@ -196,12 +197,10 @@ namespace VisorEmpresa
             string estado = ((Box_Estado.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "").ToLower();
             (BadgeEstado.Background, TxtBadgeEstado.Foreground, TxtBadgeEstado.Text) = estado switch
             {
-                "entregado"         => (new SolidColorBrush(Color.FromRgb(0xD1, 0xFA, 0xE5)),
-                                        new SolidColorBrush(Color.FromRgb(0x06, 0x5F, 0x46)), "Entregado"),
-                "pendiente revisar" => (new SolidColorBrush(Color.FromRgb(0xFE, 0xE2, 0xE2)),
-                                        new SolidColorBrush(Color.FromRgb(0x99, 0x1B, 0x1B)), "Pendiente revisar"),
-                _                   => (new SolidColorBrush(Color.FromRgb(0xFE, 0xF3, 0xC7)),
-                                        new SolidColorBrush(Color.FromRgb(0x92, 0x40, 0x0E)), "Pendiente")
+                "entregado" => (new SolidColorBrush(Color.FromRgb(0xD1, 0xFA, 0xE5)),
+                                new SolidColorBrush(Color.FromRgb(0x06, 0x5F, 0x46)), "Entregado"),
+                _           => (new SolidColorBrush(Color.FromRgb(0xFE, 0xF3, 0xC7)),
+                                new SolidColorBrush(Color.FromRgb(0x92, 0x40, 0x0E)), "Pendiente")
             };
 
             // Ícono fijo: "TR" con relleno blanco (entrada/salida se distinguen por

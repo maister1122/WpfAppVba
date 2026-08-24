@@ -512,10 +512,10 @@ namespace SistemaGestion
                 case "ventas":       TabFijoContenido.Content = _panelVentas;       TabFijoTitulo.Text = "Ventas";       break;
                 case "compras":      TabFijoContenido.Content = _panelCompras;      TabFijoTitulo.Text = "Compras";      break;
                 case "traspasos":    TabFijoContenido.Content = _panelTraspasos;    TabFijoTitulo.Text = "Traspasos";    break;
-                case "repuestas":    TabFijoContenido.Content = _panelRepuestas;    TabFijoTitulo.Text = "Repuestas";    break;
-                case "retirados":    TabFijoContenido.Content = _panelRetirados;    TabFijoTitulo.Text = "Retirados";    break;
-                case "ingresos":     TabFijoContenido.Content = _panelIngresos;     TabFijoTitulo.Text = "Ingresos";     break;
-                case "egresos":      TabFijoContenido.Content = _panelEgresos;      TabFijoTitulo.Text = "Egresos";      break;
+                case "repuestas":    TabFijoContenido.Content = _panelRepuestas;    TabFijoTitulo.Text = "Ingresos";     break;
+                case "retirados":    TabFijoContenido.Content = _panelRetirados;    TabFijoTitulo.Text = "Egresos";      break;
+                case "ingresos":     TabFijoContenido.Content = _panelIngresos;     TabFijoTitulo.Text = "Créditos";     break;
+                case "egresos":      TabFijoContenido.Content = _panelEgresos;      TabFijoTitulo.Text = "Débitos";      break;
                 case "precios":      TabFijoContenido.Content = _panelPrecios;      TabFijoTitulo.Text = "Precios";      break;
                 case "empresas":     TabFijoContenido.Content = _panelEmpresas;     TabFijoTitulo.Text = "Empresas";     break;
                 case "sucursales":   TabFijoContenido.Content = _panelSucursales;   TabFijoTitulo.Text = "Sucursales";   break;

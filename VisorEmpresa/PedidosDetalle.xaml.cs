@@ -68,6 +68,20 @@ namespace VisorEmpresa
             AppState.TipoMovimiento = tipo.ToLower();
         }
 
+        // ─── Nomenclatura visible según el movimiento ─────────────────────────
+        // El formulario es el mismo para ventas y compras, así que las etiquetas
+        // genéricas ("Doc. Pedido", "Artículos del pedido", grupo "Pedidos") se
+        // reescriben con el nombre que corresponde. "Venta"/"Compra" son femeninos.
+        private void ActualizarNomenclatura(string tipo)
+        {
+            string nombre = tipo == "venta" ? "Venta" : "Compra";
+            string plural = tipo == "venta" ? "Ventas" : "Compras";
+            LblDocTipo.Text       = $"Doc. {nombre}";
+            LblGrupoTotales.Text  = plural;
+            if (TabArticulos != null)
+                TabArticulos.Header = $"Artículos de la {nombre.ToLower()}";
+        }
+
         // ─── Carga inicial ────────────────────────────────────────────────────
         private void CargarUserform()
         {
@@ -80,6 +94,7 @@ namespace VisorEmpresa
             if (TabCobros != null)
                 TabCobros.Header = tipo == "venta" ? "Cobros" : "Pagos";
             BtnCobrarDocumento.Content = tipo == "venta" ? "Cobrar Documento" : "Pagar Documento";
+            ActualizarNomenclatura(tipo);
 
             // tipoPedido = "rapido" → ocultar tabs de cobros y entregas
             string tipoPedido = AppState.TipoPedido.ToLower();

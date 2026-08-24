@@ -397,11 +397,19 @@ namespace VisorEmpresa
                                         new SolidColorBrush(Color.FromRgb(0x99, 0x1B, 0x1B)), "Cta: Pendiente")
             };
 
-            // Título, ícono y color del encabezado según el movimiento: ingreso en
-            // verde, egreso en rojo.
+            // Título, ícono y color del encabezado según el movimiento: crédito en
+            // verde, débito en rojo.
             bool esEgreso = MovimientoSeleccionado == "egreso";
-            LblTitulo.Text          = esEgreso ? "Egreso de Factura" : "Ingreso de Factura";
-            LblIconoTipo.Text       = esEgreso ? "EG" : "IN";
+            // Se MUESTRAN como Crédito/Débito (igual que en la app principal); el
+            // valor almacenado sigue siendo "ingreso"/"egreso".
+            string nombreMov = esEgreso ? "Débito" : "Crédito";
+            // "Factura de Crédito/Débito", en el mismo orden que el título de
+            // FacturasGeneral ("Créditos"/"Débitos").
+            LblTitulo.Text          = $"Factura de {nombreMov}";
+            // Etiquetas genéricas -> nombre del movimiento.
+            LblDocTipo.Text         = $"Doc. {nombreMov}";
+            if (TabLineas != null) TabLineas.Header = $"Líneas del {nombreMov.ToLower()}";
+            LblIconoTipo.Text       = esEgreso ? "DB" : "CR";
             LblIconoTipo.Foreground = esEgreso
                 ? new SolidColorBrush(Color.FromRgb(0x99, 0x1B, 0x1B))
                 : new SolidColorBrush(Color.FromRgb(0x06, 0x5F, 0x46));

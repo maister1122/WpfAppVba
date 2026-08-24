@@ -259,7 +259,6 @@
                         <ComboBox x:Name="Box_Estado" Height="28" FontSize="12"
                                   SelectionChanged="Campo_SelectionChanged">
                             <ComboBoxItem Content="pendiente"/>
-                            <ComboBoxItem Content="pendiente revisar"/>
                             <ComboBoxItem Content="entregado"/>
                         </ComboBox>
                     </StackPanel>

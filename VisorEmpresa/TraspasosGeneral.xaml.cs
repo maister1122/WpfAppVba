@@ -23,11 +23,10 @@ namespace VisorEmpresa
     ///
     /// Diferencias de fondo respecto al original, decididas explícitamente para
     /// el visor (no aplican a la app principal):
-    ///  - Estado: el valor crudo es "pendiente"/"entregado" (sin la reinterpretación
-    ///    "pendiente revisar" relativa a AppState.SucursalActiva, que solo tenía
-    ///    sentido con una única sucursal activa fija), pero "pendiente" se
-    ///    MUESTRA como "pendiente al revisar" (ver TraspasoFila.EstadoTexto) —
-    ///    solo cambia el texto, no el valor ni el filtro.
+    ///  - Estado: se lista y se muestra SIEMPRE el valor crudo
+    ///    ("pendiente"/"entregado"), sin la reinterpretación "pendiente revisar"
+    ///    relativa a AppState.SucursalActiva, que solo tenía sentido con una
+    ///    única sucursal activa fija.
     ///  - Sin columna ni filtro de "Movimiento" (salida/entrada): Origen+Destino
     ///    ya identifican la dirección sin ambigüedad, a pedido explícito del
     ///    usuario (el concepto de movimiento no aplica bien sin una única
@@ -542,11 +541,6 @@ namespace VisorEmpresa
         public string DestinoDesc { get; set; } = "";
         public string Estado      { get; set; } = "";
         public double Cantidad    { get; set; }
-
-        /// <summary>Texto mostrado en la columna Estado: "pendiente" se ve como
-        /// "pendiente al revisar" (el valor crudo de Estado no cambia, solo el
-        /// texto — ver nota de la clase).</summary>
-        public string EstadoTexto => Estado == "pendiente" ? "pendiente al revisar" : Estado;
     }
 
     public class TraspasoDetalleFila

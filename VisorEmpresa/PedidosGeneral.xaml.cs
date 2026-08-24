@@ -372,6 +372,14 @@ namespace VisorEmpresa
             return "";
         }
 
+        /// <summary>Nombre del documento a partir de su movimiento real (para pestañas).</summary>
+        private static string NombreDocDe(string movimiento) => movimiento switch
+        {
+            "venta"  => "Venta",
+            "compra" => "Compra",
+            _        => "Pedido"
+        };
+
         // El movimiento lo fija la sección del panel lateral; vacío = los dos juntos.
         private string ObtenerFiltroTipo() => TipoMovimiento;
 
@@ -546,7 +554,9 @@ namespace VisorEmpresa
             AppState.TipoMovimiento = Sql.DocumentosPObj.ObtenerItem("movimiento", fila.DocumentoP)?.ToString() ?? "venta";
             AppState.TipoPedido     = Sql.DocumentosPObj.ObtenerItem("tipo",       fila.DocumentoP)?.ToString() ?? "rapido";
 
-            string titulo = $"Pedido {fila.Codigo}";
+            // El título sigue al movimiento REAL del documento, no al filtro: el
+            // listado combinado mezcla ventas y compras.
+            string titulo = $"{NombreDocDe(AppState.TipoMovimiento)} {fila.Codigo}";
             var dlg = new PedidosDetalle(null, fila.DocumentoP, tituloTab: titulo);
             dlg.Cerrando += () => consola.CerrarPestaña(dlg);
             consola.AbrirPestaña(titulo, dlg, $"pedido-{fila.DocumentoP}");

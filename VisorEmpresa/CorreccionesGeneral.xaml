@@ -174,7 +174,7 @@
 
                 <Border Grid.Column="4" Style="{StaticResource MetricCard}">
                     <StackPanel>
-                        <TextBlock Text="Repuestas"
+                        <TextBlock Text="Ingresos"
                                    FontSize="11" Foreground="{DynamicResource ThemeTextoSec}"/>
                         <TextBlock x:Name="TxtTotalIngresos"
                                    FontSize="20" FontWeight="SemiBold"
@@ -185,7 +185,7 @@
 
                 <Border Grid.Column="6" Style="{StaticResource MetricCard}">
                     <StackPanel>
-                        <TextBlock Text="Retirados"
+                        <TextBlock Text="Egresos"
                                    FontSize="11" Foreground="{DynamicResource ThemeTextoSec}"/>
                         <TextBlock x:Name="TxtTotalEgresos"
                                    FontSize="20" FontWeight="SemiBold"

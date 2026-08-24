@@ -185,9 +185,9 @@
                         <ColumnDefinition Width="180"/>
                     </Grid.ColumnDefinitions>
 
-                    <!-- Doc. Corrección -->
+                    <!-- Doc. Corrección (se reescribe con el movimiento: ver ActualizarNomenclatura) -->
                     <StackPanel Grid.Column="0">
-                        <TextBlock Text="Doc. Corrección" Style="{StaticResource LblMuted}"/>
+                        <TextBlock x:Name="LblDocTipo" Text="Doc. Corrección" Style="{StaticResource LblMuted}"/>
                         <TextBox x:Name="Box_DocumentoC" Style="{StaticResource ModernInput}"
                                  TextChanged="Campo_TextChanged"
                                  PreviewTextInput="Box_Numeros_PreviewTextInput"/>

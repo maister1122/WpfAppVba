@@ -325,6 +325,7 @@ namespace VisorEmpresa
             TxtTotalDocumentos.Text  = lista.Count.ToString("N0");
             TxtEstadosPendientes.Text = lista.Count(f => f.Estado == "pendiente").ToString();
             TxtCuentasPendientes.Text = lista.Count(f => f.EstadoC == "pendiente" || f.EstadoC == "pendiente parcial").ToString();
+            ActualizarNomenclatura();
             int año = VisorState.AnioActivo;
             LblSubtitulo.Text = string.IsNullOrEmpty(_mesActivo)
                 ? año.ToString()
@@ -355,6 +356,28 @@ namespace VisorEmpresa
 
         private void FiltroCuenta_Checked(object sender, RoutedEventArgs e)
             => CargarFacturas();
+
+        // ─── Nomenclatura visible según la sección activa ─────────────────────
+        // Se MUESTRAN como Crédito/Débito (igual que en la app principal); el valor
+        // almacenado sigue siendo "ingreso"/"egreso", que es lo que leen el cálculo
+        // de saldos y NormalizarMovimiento.
+        private static string NombreDocDe(string movimiento) => movimiento switch
+        {
+            "ingreso" => "Crédito",
+            "egreso"  => "Débito",
+            _         => "Factura"
+        };
+
+        // Refresca los textos que dependen de la sección activa.
+        private void ActualizarNomenclatura()
+        {
+            LblTitulo.Text = ObtenerFiltroTipo() switch
+            {
+                "ingreso" => "Créditos",
+                "egreso"  => "Débitos",
+                _         => "Facturas"
+            };
+        }
 
         // El movimiento lo fija la sección del panel lateral; vacío = los dos juntos.
         private string ObtenerFiltroTipo() => TipoMovimiento;
@@ -485,7 +508,9 @@ namespace VisorEmpresa
             var consola = Window.GetWindow(this) as ConsolaMovimientos;
             if (consola == null) return;
 
-            string titulo = $"Factura {fila.Codigo}";
+            // El título sigue al movimiento REAL del documento, no al filtro: el
+            // listado combinado mezcla los dos.
+            string titulo = $"{NombreDocDe(NormalizarMovimiento(fila.Movimiento))} {fila.Codigo}";
             var dlg = new FacturasDetalle(null, fila.Id, tituloTab: titulo);
             dlg.Cerrando += () => consola.CerrarPestaña(dlg);
             consola.AbrirPestaña(titulo, dlg, $"factura-{fila.Id}");

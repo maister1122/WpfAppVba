@@ -53,17 +53,18 @@ namespace VisorEmpresa
             if (AppState.EventoFormularioC == "editar")
             {
                 _movimiento      = NormalizarMovimiento(Sql.DocumentosCObj.ObtenerItem("movimiento", _idEditar)?.ToString());
-                string tipoLabel = _movimiento == "repuesta" ? "Repuesta" : "Retirado";
-                LblTitulo.Text   = $"Corrección de {tipoLabel}";
+                string tipoLabel = NombreMovimiento;
+                LblTitulo.Text   = $"{tipoLabel} de Stock";
                 CargarParaEditar();
             }
             else
             {
                 _movimiento      = NormalizarMovimiento(AppState.TipoCorreccion);
-                string tipoLabel = _movimiento == "repuesta" ? "Repuesta" : "Retirado";
-                LblTitulo.Text   = $"Nueva Corrección de {tipoLabel}";
+                string tipoLabel = NombreMovimiento;
+                LblTitulo.Text   = $"{tipoLabel} de Stock";
                 CargarParaNuevo();
             }
+            ActualizarNomenclatura();
 
             ActualizarBadge();
             _cargando   = false;
@@ -148,7 +149,7 @@ namespace VisorEmpresa
             Box_Emision.Text = $"{ahora:d} {ahora:HH:mm:ss}";
             Box_Edicion.Text = $"{ahora:d} {ahora:HH:mm:ss}";
 
-            // Preseleccionar el movimiento según la sección (Repuestas / Retirados)
+            // Preseleccionar el movimiento según la sección (Ingresos / Egresos)
             string tipo = string.IsNullOrEmpty(AppState.TipoCorreccion) ? "retirado" : AppState.TipoCorreccion;
             SeleccionarMovimiento(tipo);   // dispara ActualizarMotivos
 
@@ -165,10 +166,20 @@ namespace VisorEmpresa
         // ─── Movimiento / Motivo ──────────────────────────────────────────────
         /// <summary>
         /// Movimiento del documento ("repuesta"/"retirado"). Ya no es un combo en
-        /// pantalla: lo fija la sección (Repuestas/Retirados) o el documento que se
+        /// pantalla: lo fija la sección (Ingresos/Egresos) o el documento que se
         /// abre.
         /// </summary>
         private string _movimiento = "retirado";
+
+        /// <summary>Nombre VISIBLE del movimiento: "Ingreso"/"Egreso" (igual que en
+        /// la app principal). El valor almacenado sigue siendo "repuesta"/"retirado",
+        /// que es lo que leen las consultas de stock y NormalizarMovimiento.</summary>
+        private string NombreMovimiento => _movimiento == "repuesta" ? "Ingreso" : "Egreso";
+
+        // Las etiquetas genéricas ("Doc. Corrección") se reescriben con el nombre
+        // que corresponde al movimiento.
+        private void ActualizarNomenclatura()
+            => LblDocTipo.Text = $"Doc. {NombreMovimiento}";
 
         /// <summary>
         /// Movimiento de una corrección, normalizado a "repuesta"/"retirado". Las
@@ -189,11 +200,11 @@ namespace VisorEmpresa
 
             (BadgeEstado.Background, TxtBadgeEstado.Foreground, TxtBadgeEstado.Text) = esIngreso
                 ? (new SolidColorBrush(Color.FromRgb(0xD1, 0xFA, 0xE5)),
-                   new SolidColorBrush(Color.FromRgb(0x06, 0x5F, 0x46)), "Repuesta")
+                   new SolidColorBrush(Color.FromRgb(0x06, 0x5F, 0x46)), "Ingreso")
                 : (new SolidColorBrush(Color.FromRgb(0xFE, 0xE2, 0xE2)),
-                   new SolidColorBrush(Color.FromRgb(0x99, 0x1B, 0x1B)), "Retirado");
+                   new SolidColorBrush(Color.FromRgb(0x99, 0x1B, 0x1B)), "Egreso");
 
-            LblIconoTipo.Text       = esIngreso ? "RE" : "RT";
+            LblIconoTipo.Text       = esIngreso ? "IN" : "EG";
             IconoBorde.Background   = esIngreso
                 ? new SolidColorBrush(Color.FromRgb(0xD1, 0xFA, 0xE5))
                 : new SolidColorBrush(Color.FromRgb(0xFE, 0xE2, 0xE2));
