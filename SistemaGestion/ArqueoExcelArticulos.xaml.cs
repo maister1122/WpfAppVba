@@ -261,7 +261,7 @@ namespace SistemaGestion
 
             // Mismo criterio de recolección/orden que Informe Excel (Producto → Familia → Id).
             int uf = Sql.ArticulosObj.ContarFilas;
-            var datos = new List<(string Id, string Codigo, string ProdDesc, string FamDesc, string CatDesc, string DescCompleta, double Stock)>();
+            var datos = new List<(string Id, string Codigo, string ProdDesc, string FamDesc, string CatDesc, string DescCompleta, double Stock, int Indice)>();
             for (int i = 1; i <= uf; i++)
             {
                 var idObj = Sql.ArticulosObj.Mover(i);
@@ -282,14 +282,24 @@ namespace SistemaGestion
                 string descCompleta = FuncionesComunes.UnirVariables(desc, famDesc, modelo);
                 double stock         = StockCalculator.ContarStock(id, fechaCorte);
 
-                datos.Add((id, codigo, prodDesc, famDesc, catDesc, descCompleta, stock));
+                // Índice del artículo dentro de su familia: es el tercer criterio de
+                // orden del informe (antes desempataba por id, un GUID, o sea al azar).
+                int indice = int.TryParse(Sql.ArticulosObj.ObtenerItem("indice", id)?.ToString(), out int ix) ? ix : 0;
+
+                datos.Add((id, codigo, prodDesc, famDesc, catDesc, descCompleta, stock, indice));
             }
 
+            // Producto → Familia → Índice dentro de la familia. El índice es
+            // numérico, así que se compara como número (ordenarlo como texto pondría
+            // el 10 antes del 2). El id queda solo como desempate final, para que el
+            // orden sea estable si dos artículos comparten índice.
             datos.Sort((a, b) =>
             {
                 int cmp = string.Compare(a.ProdDesc, b.ProdDesc, StringComparison.OrdinalIgnoreCase);
                 if (cmp != 0) return cmp;
                 cmp = string.Compare(a.FamDesc, b.FamDesc, StringComparison.OrdinalIgnoreCase);
+                if (cmp != 0) return cmp;
+                cmp = a.Indice.CompareTo(b.Indice);
                 if (cmp != 0) return cmp;
                 return string.Compare(a.Id, b.Id, StringComparison.OrdinalIgnoreCase);
             });

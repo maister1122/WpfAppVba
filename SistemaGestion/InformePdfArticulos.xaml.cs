@@ -316,7 +316,7 @@ namespace SistemaGestion
             DibujarEncabezadoColumnas();
 
             // ── Recolectar datos (según la Condición elegida) ─────────────
-            var lineas = new List<(string prodDesc, string famDesc, string codigo, string catDesc, string desc, double stock)>();
+            var lineas = new List<(string prodDesc, string famDesc, string codigo, string catDesc, string desc, double stock, int indice)>();
 
             int uf = Sql.ArticulosObj.ContarFilas;
             for (int i = 1; i <= uf; i++)
@@ -341,7 +341,11 @@ namespace SistemaGestion
 
                 if (!CumpleCondicion(stock, condicion)) continue;
 
-                lineas.Add((prodDesc, famDesc, codigo, catDesc, descCompleta, stock));
+                // Índice del artículo dentro de su familia: ordena las filas dentro de
+                // cada grupo Producto+Familia (antes salían en orden de lectura).
+                int indice = int.TryParse(Sql.ArticulosObj.ObtenerItem("indice", id)?.ToString(), out int ix) ? ix : 0;
+
+                lineas.Add((prodDesc, famDesc, codigo, catDesc, descCompleta, stock, indice));
             }
 
             var grupos = lineas
@@ -355,7 +359,9 @@ namespace SistemaGestion
                 AsegurarEspacio(altoGrupo + altoFila);
                 DibujarBandaGrupo($"{grupo.Key.prodDesc} & {grupo.Key.famDesc}");
 
-                foreach (var l in grupo)
+                // Dentro del grupo Producto+Familia, por índice dentro de la familia
+                // (antes salían en el orden en que se leyeron de la base).
+                foreach (var l in grupo.OrderBy(x => x.indice))
                 {
                     AsegurarEspacio(altoFila);
                     n++;

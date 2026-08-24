@@ -194,7 +194,7 @@ namespace SistemaGestion
 
             // ── Recolectar datos (según la Condición elegida) ─────────────
             int uf = Sql.ArticulosObj.ContarFilas;
-            var datos = new List<(string id, string codigo, string prodDesc, string catDesc, string famDesc, string descCompleta, double stock)>();
+            var datos = new List<(string id, string codigo, string prodDesc, string catDesc, string famDesc, string descCompleta, double stock, int indice)>();
 
             for (int i = 1; i <= uf; i++)
             {
@@ -220,15 +220,24 @@ namespace SistemaGestion
 
                 if (!CumpleCondicion(stock, condicion)) continue;
 
-                datos.Add((id, codigo, prodDesc, catDesc, famDesc, descCompleta, stock));
+                // Índice del artículo dentro de su familia: es el tercer criterio de
+                // orden del informe (antes desempataba por id, un GUID, o sea al azar).
+                int indice = int.TryParse(Sql.ArticulosObj.ObtenerItem("indice", id)?.ToString(), out int ix) ? ix : 0;
+
+                datos.Add((id, codigo, prodDesc, catDesc, famDesc, descCompleta, stock, indice));
             }
 
-            // ── Ordenar por Producto → Familia → Id ──────────────────────
+            // ── Ordenar por Producto → Familia → Índice dentro de la familia ──
+            // El índice es numérico, así que se compara como número (ordenarlo como
+            // texto pondría el 10 antes del 2). El id queda solo como desempate
+            // final, para que el orden sea estable si dos artículos comparten índice.
             datos.Sort((a, b) =>
             {
                 int cmp = string.Compare(a.prodDesc, b.prodDesc, StringComparison.OrdinalIgnoreCase);
                 if (cmp != 0) return cmp;
                 cmp = string.Compare(a.famDesc, b.famDesc, StringComparison.OrdinalIgnoreCase);
+                if (cmp != 0) return cmp;
+                cmp = a.indice.CompareTo(b.indice);
                 if (cmp != 0) return cmp;
                 return string.Compare(a.id, b.id, StringComparison.OrdinalIgnoreCase);
             });
