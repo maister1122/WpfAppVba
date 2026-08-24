@@ -139,6 +139,9 @@ namespace SistemaGestion
         private List<NodoDeseado> ConstruirArbolDeseado()
         {
             var nodoTodos = new NodoDeseado { Tag = "todos", Header = "Todos" };
+            // Ids de productos vivos: una familia puede apuntar a un producto ya
+            // borrado, y en ese caso también cuenta como "sin producto".
+            var productosVivos = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
             int ufProd = Sql.ProductosObj.ContarFilas;
             for (int i = 1; i <= ufProd; i++)
@@ -146,6 +149,7 @@ namespace SistemaGestion
                 var idObj = Sql.ProductosObj.Mover(i);
                 if (idObj == null) continue;
                 string prodId   = idObj.ToString()!;
+                productosVivos.Add(prodId);
                 string prodDesc = Sql.ProductosObj.ObtenerItem("descripcion", prodId)?.ToString() ?? prodId;
 
                 var nodoProd = new NodoDeseado { Tag = $"producto:{prodId}", Header = prodDesc };
@@ -164,6 +168,31 @@ namespace SistemaGestion
 
                 nodoTodos.Hijos.Add(nodoProd);
             }
+
+            // ── Nodo de lo no clasificado ────────────────────────────────────
+            // "Sin Producto" agrupa las familias que no tienen producto (o cuyo
+            // producto ya no existe), que de otro modo no aparecerían bajo ningún
+            // nodo del árbol. Adentro cuelga "Sin Familia" con los artículos que no
+            // tienen familia asignada. Se muestra siempre, igual que los productos
+            // sin familias, para que el punto de entrada exista aunque hoy esté vacío.
+            var nodoSinProducto = new NodoDeseado { Tag = "sin-producto", Header = "Sin Producto" };
+            nodoSinProducto.Hijos.Add(new NodoDeseado { Tag = "sin-familia", Header = "Sin Familia" });
+
+            int ufFamSin = Sql.FamiliasObj.ContarFilas;
+            for (int j = 1; j <= ufFamSin; j++)
+            {
+                var famIdObj = Sql.FamiliasObj.Mover(j);
+                if (famIdObj == null) continue;
+                string famId = famIdObj.ToString()!;
+
+                string prodDeFam = Sql.FamiliasObj.ObtenerItem("producto", famId)?.ToString() ?? "";
+                if (!string.IsNullOrEmpty(prodDeFam) && productosVivos.Contains(prodDeFam)) continue;
+
+                string famDesc = Sql.FamiliasObj.ObtenerItem("descripcion", famId)?.ToString() ?? famId;
+                nodoSinProducto.Hijos.Add(new NodoDeseado { Tag = $"familia:{famId}", Header = famDesc });
+            }
+
+            nodoTodos.Hijos.Add(nodoSinProducto);
 
             return new List<NodoDeseado> { nodoTodos };
         }
@@ -248,6 +277,25 @@ namespace SistemaGestion
             string busqueda  = _modoFiltro == "busqueda" ? TxtBuscar.Text.Trim().ToLower() : "";
             string tagFiltro = _modoFiltro == "familia"  ? ObtenerTagFiltro()              : "";
 
+            // Solo los filtros de "no clasificado" necesitan saber qué familias y
+            // productos siguen existiendo (un artículo puede apuntar a una familia
+            // borrada, y una familia a un producto borrado). Se resuelve una vez acá
+            // en vez de por artículo, y solo cuando hace falta.
+            HashSet<string>? familiasVivas = null, productosVivos = null;
+            if (tagFiltro is "sin-producto" or "sin-familia")
+            {
+                familiasVivas  = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                productosVivos = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+                int ufFamV = Sql.FamiliasObj.ContarFilas;
+                for (int j = 1; j <= ufFamV; j++)
+                    if (Sql.FamiliasObj.Mover(j)?.ToString() is string fid) familiasVivas.Add(fid);
+
+                int ufProdV = Sql.ProductosObj.ContarFilas;
+                for (int j = 1; j <= ufProdV; j++)
+                    if (Sql.ProductosObj.Mover(j)?.ToString() is string pid) productosVivos.Add(pid);
+            }
+
             int uf = Sql.ArticulosObj.ContarFilas;
             for (int i = 1; i <= uf; i++)
             {
@@ -270,6 +318,23 @@ namespace SistemaGestion
                         string prodFiltro = tagFiltro.Substring("producto:".Length);
                         string famProd    = Sql.FamiliasObj.ObtenerItem("producto", famId)?.ToString() ?? "";
                         if (famProd != prodFiltro) continue;
+                    }
+                    else if (tagFiltro == "sin-familia")
+                    {
+                        // Sin familia asignada, o apuntando a una familia borrada.
+                        if (!string.IsNullOrEmpty(famId) && familiasVivas!.Contains(famId)) continue;
+                    }
+                    else if (tagFiltro == "sin-producto")
+                    {
+                        // Todo lo que cuelga del nodo: los artículos sin familia (el
+                        // nodo hijo "Sin Familia") más los de familias que no tienen
+                        // un producto vivo.
+                        bool sinFamilia = string.IsNullOrEmpty(famId) || !familiasVivas!.Contains(famId);
+                        if (!sinFamilia)
+                        {
+                            string famProd = Sql.FamiliasObj.ObtenerItem("producto", famId)?.ToString() ?? "";
+                            if (!string.IsNullOrEmpty(famProd) && productosVivos!.Contains(famProd)) continue;
+                        }
                     }
                     // "todos" o vacío → sin filtro
                 }
