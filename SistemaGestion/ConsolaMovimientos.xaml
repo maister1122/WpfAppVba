@@ -471,11 +471,11 @@
                             <!-- Nivel correciones -->
                             <TextBlock Text="CORRECCIONES" Style="{StaticResource NavSeccion}"/>
                             <Button x:Name="BtnNav_Repuestas"
-                                    Content="🔧  Repuestas"
+                                    Content="🔧  Ingresos"
                                     Style="{StaticResource NavBtn}"
                                     Click="BtnNav_Repuestas_Click"/>
                             <Button x:Name="BtnNav_Retirados"
-                                    Content="🔧  Retirados"
+                                    Content="🔧  Egresos"
                                     Style="{StaticResource NavBtn}"
                                     Click="BtnNav_Retirados_Click"/>
 

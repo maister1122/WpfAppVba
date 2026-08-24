@@ -71,14 +71,14 @@ namespace SistemaGestion
             if (AppState.EventoFormularioC == "editar")
             {
                 _movimiento      = NormalizarMovimiento(Sql.DocumentosCObj.ObtenerItem("movimiento", _idEditar)?.ToString());
-                string tipoLabel = _movimiento == "repuesta" ? "Repuesta" : "Retirado";
+                string tipoLabel = _movimiento == "repuesta" ? "Ingreso" : "Egreso";
                 LblTitulo.Text   = $"Editar {tipoLabel}";
                 CargarParaEditar();
             }
             else
             {
                 _movimiento      = NormalizarMovimiento(AppState.TipoCorreccion);
-                string tipoLabel = _movimiento == "repuesta" ? "Repuesta" : "Retirado";
+                string tipoLabel = _movimiento == "repuesta" ? "Ingreso" : "Egreso";
                 LblTitulo.Text   = $"{tipoLabel} de Stock";
                 CargarParaNuevo();
             }
@@ -90,10 +90,12 @@ namespace SistemaGestion
         }
 
         // ─── Nomenclatura visible según el movimiento ─────────────────────────
-        // El formulario es el mismo para repuestas y retirados, así que la etiqueta
+        // El formulario es el mismo para los dos movimientos, así que la etiqueta
         // genérica "Doc. Corrección" se reescribe con el nombre que corresponde.
+        // Se muestran como Ingreso/Egreso; el valor almacenado sigue siendo
+        // "repuesta"/"retirado" (lo leen las consultas de stock y CodigoRegenerator).
         private void ActualizarNomenclatura()
-            => LblDocTipo.Text = $"Doc. {(_movimiento == "repuesta" ? "Repuesta" : "Retirado")}";
+            => LblDocTipo.Text = $"Doc. {(_movimiento == "repuesta" ? "Ingreso" : "Egreso")}";
 
         private void CargarParaEditar()
         {
@@ -160,7 +162,7 @@ namespace SistemaGestion
             Box_Emision.Text = $"{ahora:d} {ahora:HH:mm:ss}";
             Box_Edicion.Text = $"{ahora:d} {ahora:HH:mm:ss}";
 
-            // Preseleccionar el movimiento según la sección (Repuestas / Retirados)
+            // Preseleccionar el movimiento según la sección (Ingresos / Egresos)
             string tipo = string.IsNullOrEmpty(AppState.TipoCorreccion) ? "retirado" : AppState.TipoCorreccion;
             SeleccionarMovimiento(tipo);   // dispara ActualizarMotivos
 
@@ -178,7 +180,7 @@ namespace SistemaGestion
 
         /// <summary>
         /// Movimiento del documento ("repuesta"/"retirado"). Ya no es un combo en
-        /// pantalla: al crear lo fija la sección (Repuestas/Retirados) y al editar
+        /// pantalla: al crear lo fija la sección (Ingresos/Egresos) y al editar
         /// se conserva el que tiene guardado el documento.
         /// </summary>
         private string _movimiento = "retirado";
@@ -202,11 +204,11 @@ namespace SistemaGestion
 
             (BadgeEstado.Background, TxtBadgeEstado.Foreground, TxtBadgeEstado.Text) = esIngreso
                 ? (new SolidColorBrush(Color.FromRgb(0xD1, 0xFA, 0xE5)),
-                   new SolidColorBrush(Color.FromRgb(0x06, 0x5F, 0x46)), "Repuesta")
+                   new SolidColorBrush(Color.FromRgb(0x06, 0x5F, 0x46)), "Ingreso")
                 : (new SolidColorBrush(Color.FromRgb(0xFE, 0xE2, 0xE2)),
-                   new SolidColorBrush(Color.FromRgb(0x99, 0x1B, 0x1B)), "Retirado");
+                   new SolidColorBrush(Color.FromRgb(0x99, 0x1B, 0x1B)), "Egreso");
 
-            LblIconoTipo.Text       = esIngreso ? "RE" : "RT";
+            LblIconoTipo.Text       = esIngreso ? "IN" : "EG";
             IconoBorde.Background   = esIngreso
                 ? new SolidColorBrush(Color.FromRgb(0xD1, 0xFA, 0xE5))
                 : new SolidColorBrush(Color.FromRgb(0xFE, 0xE2, 0xE2));

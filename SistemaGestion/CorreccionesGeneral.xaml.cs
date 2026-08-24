@@ -214,9 +214,9 @@ namespace SistemaGestion
             TxtTotalEgresos.Text    = lista.Count(f => f.Movimiento == "retirado").ToString();
             LblTipoMovimiento.Text = tipoMov switch
             {
-                "retirado" => "Retirados de Stock (pérdida, merma, hurto, consumo interno)",
-                "repuesta" => "Repuestas de Stock (error de registro, registros omitidos)",
-                _          => "Correcciones de Stock (Repuestas y Retirados)"
+                "retirado" => "Egresos de Stock (pérdida, merma, hurto, consumo interno)",
+                "repuesta" => "Ingresos de Stock (error de registro, registros omitidos)",
+                _          => "Correcciones de Stock (Ingresos y Egresos)"
             };
             ActualizarNomenclatura();
             int año = AppState.DataFechaFinal.Year > 2000
@@ -254,11 +254,13 @@ namespace SistemaGestion
         {
             if (!string.IsNullOrEmpty(TipoMovimiento)) return TipoMovimiento;
 
+            // El combo ahora dice Ingresos/Egresos, pero el valor almacenado sigue
+            // siendo "repuesta"/"retirado" (ver nota de nomenclatura más abajo).
             return (CboTipoMovimiento?.SelectedItem as ComboBoxItem)?.Content?.ToString()?.ToLower() switch
             {
-                "repuestas" => "repuesta",
-                "retirados" => "retirado",
-                _           => ""
+                "ingresos" => "repuesta",
+                "egresos"  => "retirado",
+                _          => ""
             };
         }
 
@@ -268,29 +270,34 @@ namespace SistemaGestion
         /// "ingreso"/"egreso": se leen como su equivalente.
         /// </summary>
         // ─── Nomenclatura visible según la sección activa ─────────────────────
-        // La barra lateral fija la sección (Repuestas / Retirados): ahí los textos
-        // deben hablar de "repuesta"/"retirado", no del genérico "corrección". Solo
-        // el listado combinado sigue diciendo "corrección". Ojo con el género:
-        // "Repuesta" y "Corrección" son femeninos, pero "Retirado" es masculino.
+        // La barra lateral fija la sección (Ingresos / Egresos de stock): ahí los
+        // textos deben hablar de "ingreso"/"egreso", no del genérico "corrección".
+        // Solo el listado combinado sigue diciendo "corrección". Ojo con el género:
+        // "Ingreso" y "Egreso" son masculinos, "Corrección" femenino.
+        //
+        // El valor ALMACENADO sigue siendo "repuesta"/"retirado": lo leen las
+        // consultas de stock (MovimientoSql), CodigoRegenerator y los normalizadores,
+        // y además "ingreso"/"egreso" ya identifican a las Facturas. Acá se renombra
+        // solo lo que ve el usuario.
         private static string NombreDocDe(string movimiento) => NormalizarMovimiento(movimiento) switch
         {
-            "repuesta" => "Repuesta",
-            "retirado" => "Retirado",
+            "repuesta" => "Ingreso",
+            "retirado" => "Egreso",
             _          => "Corrección"
         };
 
-        private static bool EsFemeninoDe(string nombreDoc) => nombreDoc != "Retirado";
+        private static bool EsFemeninoDe(string nombreDoc) => nombreDoc == "Corrección";
 
         private string NombreDoc => NombreDocDe(ObtenerFiltroTipo());
 
-        /// <summary>"Nueva Repuesta" / "Nuevo Retirado" / "Nueva Corrección".</summary>
+        /// <summary>"Nuevo Ingreso" / "Nuevo Egreso" / "Nueva Corrección".</summary>
         private static string TituloNuevoDocDe(string movimiento)
         {
             string nombre = NombreDocDe(movimiento);
             return $"{(EsFemeninoDe(nombre) ? "Nueva" : "Nuevo")} {nombre}";
         }
 
-        /// <summary>"esta repuesta" / "este retirado" / "esta corrección".</summary>
+        /// <summary>"este ingreso" / "este egreso" / "esta corrección".</summary>
         private string EsteDocMinus =>
             $"{(EsFemeninoDe(NombreDoc) ? "esta" : "este")} {NombreDoc.ToLower()}";
 

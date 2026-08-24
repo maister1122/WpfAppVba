@@ -300,8 +300,12 @@ namespace SistemaGestion
                 case "compras":      TabFijoContenido.Content = _panelCompras;      TabFijoTitulo.Text = "Compras";      break;
                 case "entradas":     TabFijoContenido.Content = _panelEntradas;     TabFijoTitulo.Text = "Entradas";     break;
                 case "salidas":      TabFijoContenido.Content = _panelSalidas;      TabFijoTitulo.Text = "Salidas";      break;
-                case "repuestas":    TabFijoContenido.Content = _panelRepuestas;    TabFijoTitulo.Text = "Repuestas";    break;
-                case "retirados":    TabFijoContenido.Content = _panelRetirados;    TabFijoTitulo.Text = "Retirados";    break;
+                // Correcciones: los movimientos se muestran como Ingresos/Egresos.
+                // La clave de sección y el valor almacenado siguen siendo
+                // "repuestas"/"retirados" — cambiarlos chocaría con las claves de
+                // Facturas, que ya usa "ingresos"/"egresos".
+                case "repuestas":    TabFijoContenido.Content = _panelRepuestas;    TabFijoTitulo.Text = "Ingresos";     break;
+                case "retirados":    TabFijoContenido.Content = _panelRetirados;    TabFijoTitulo.Text = "Egresos";      break;
                 case "ingresos":     TabFijoContenido.Content = _panelIngresos;     TabFijoTitulo.Text = "Ingresos";     break;
                 case "egresos":      TabFijoContenido.Content = _panelEgresos;      TabFijoTitulo.Text = "Egresos";      break;
                 case "terceros":     TabFijoContenido.Content = _panelTerceros;     TabFijoTitulo.Text = "Terceros";     break;
