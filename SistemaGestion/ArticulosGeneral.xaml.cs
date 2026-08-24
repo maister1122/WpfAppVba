@@ -535,7 +535,6 @@ namespace SistemaGestion
             var consola = Window.GetWindow(this) as ConsolaMovimientos;
             if (consola == null) return;
             string titulo = "Nuevo Artículo";
-            var filaAntes = Grid1.SelectedItem as ArticuloFila;
             var dlg = new ArticulosDetalle(this, tituloTab: titulo);
             dlg.Cerrando += () =>
             {
@@ -543,8 +542,11 @@ namespace SistemaGestion
                 if (dlg.ItemCreadoId == null) return;   // cancelado
                 var lista = FilasGrid;
                 var nueva = ConstruirFila(dlg.ItemCreadoId, 0);
-                int idx = filaAntes != null ? lista.IndexOf(filaAntes) : -1;
-                if (idx >= 0) lista.Insert(idx, nueva); else lista.Add(nueva);
+                // Al FINAL de la lista: la posición del artículo nuevo depende de la
+                // familia/índice que cargó el usuario, no de qué fila estaba
+                // seleccionada al abrir el formulario, así que insertarlo encima de
+                // esa fila era arbitrario. Queda seleccionado y enfocado.
+                lista.Add(nueva);
                 RenumerarYActualizarTotales();
                 EnfocarFila(nueva);
             };
@@ -564,9 +566,14 @@ namespace SistemaGestion
                 consola.CerrarPestaña(dlg);
                 if (dlg.ItemCreadoId == null) return;   // cancelado
                 var lista = FilasGrid;
-                int idx   = lista.IndexOf(fila);
                 var nueva = ConstruirFila(dlg.ItemCreadoId, 0);
-                if (idx >= 0) lista.Insert(idx, nueva); else lista.Add(nueva);
+                // Al FINAL de la lista (a pedido), igual que "Nuevo": el artículo
+                // recién creado queda siempre a la vista, seleccionado y enfocado.
+                // Nota: en SQL este artículo sí ocupa el índice del de referencia
+                // (GuardarInsertar corre el resto de la familia y la renumera), así
+                // que hasta el próximo "Actualizar" la fila se ve al final en vez de
+                // en su posición por familia+índice.
+                lista.Add(nueva);
                 RenumerarYActualizarTotales();
                 EnfocarFila(nueva);
             };
