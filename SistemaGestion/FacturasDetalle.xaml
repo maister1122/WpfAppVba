@@ -224,7 +224,7 @@
                     <!-- Doc. Factura -->
                     <StackPanel Grid.Column="0">
                         <!-- El texto lo reescribe ActualizarBadges() según el
-                             movimiento: Doc. Ingreso / Doc. Egreso. -->
+                             movimiento: Doc. Crédito / Doc. Débito. -->
                         <TextBlock x:Name="LblDocTipo" Text="Doc. Factura" Style="{StaticResource LblMuted}"/>
                         <TextBox x:Name="Box_DocumentoF" Style="{StaticResource ModernInput}"
                                  IsEnabled="False"

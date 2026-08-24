@@ -70,7 +70,7 @@ namespace SistemaGestion
         // la sección de FacturasGeneral desde la que se creó; vacío = ingreso.
         private readonly string _movimientoInicial;
         // Movimiento del documento ("ingreso"/"egreso"). Ya no es un combo: al crear
-        // lo fija la sección (Ingresos/Egresos) o el pedido validado, y al editar se
+        // lo fija la sección (Créditos/Débitos) o el pedido validado, y al editar se
         // conserva el que tiene guardado el documento.
         private string _movimiento = "ingreso";
 
@@ -596,14 +596,16 @@ namespace SistemaGestion
 
             // Título, ícono y color del encabezado según el movimiento.
             bool esEgreso = MovimientoSeleccionado == "egreso";
-            string nombreMov = esEgreso ? "Egreso" : "Ingreso";
-            LblTitulo.Text          = $"{nombreMov} de Factura";
+            string nombreMov = esEgreso ? "Débito" : "Crédito";
+            // "Factura de Crédito/Débito", en el mismo orden que el título de
+            // FacturasGeneral ("Facturas de Créditos").
+            LblTitulo.Text          = $"Factura de {nombreMov}";
             // Etiquetas genéricas -> nombre del movimiento (ver nomenclatura por
             // sección en FacturasGeneral).
             LblDocTipo.Text         = $"Doc. {nombreMov}";
             if (TabLineas != null) TabLineas.Header = $"Líneas del {nombreMov.ToLower()}";
-            LblIconoTipo.Text       = esEgreso ? "EG" : "IN";
-            // Ingreso en verde, egreso en rojo.
+            LblIconoTipo.Text       = esEgreso ? "DB" : "CR";
+            // Crédito en verde, débito en rojo.
             LblIconoTipo.Foreground = esEgreso
                 ? new SolidColorBrush(Color.FromRgb(0x99, 0x1B, 0x1B))
                 : new SolidColorBrush(Color.FromRgb(0x06, 0x5F, 0x46));

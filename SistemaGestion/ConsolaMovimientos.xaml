@@ -482,11 +482,11 @@
                             <!-- Nivel facturas -->
                             <TextBlock Text="FACTURAS" Style="{StaticResource NavSeccion}"/>
                             <Button x:Name="BtnNav_Ingresos"
-                                    Content="🧾  Ingresos"
+                                    Content="🧾  Créditos"
                                     Style="{StaticResource NavBtn}"
                                     Click="BtnNav_Ingresos_Click"/>
                             <Button x:Name="BtnNav_Egresos"
-                                    Content="🧾  Egresos"
+                                    Content="🧾  Débitos"
                                     Style="{StaticResource NavBtn}"
                                     Click="BtnNav_Egresos_Click"/>
                             <Rectangle Height="1" Fill="{DynamicResource ThemeBorde}" Margin="12,8"/>

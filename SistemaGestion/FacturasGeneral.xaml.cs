@@ -17,7 +17,7 @@ namespace SistemaGestion
 
         /// <summary>
         /// Tipo de movimiento fijo para este control ("ingreso" o "egreso"). Lo fija
-        /// la sección del panel lateral (Ingresos / Egresos): el listado queda
+        /// la sección del panel lateral (Créditos / Débitos): el listado queda
         /// filtrado y las facturas nuevas nacen con ese movimiento. Vacío = la
         /// pantalla lista ingresos y egresos juntos.
         /// </summary>
@@ -40,7 +40,7 @@ namespace SistemaGestion
 
             if (string.IsNullOrEmpty(TipoMovimiento)) return;
 
-            LblTitulo.Text = TipoMovimiento == "egreso" ? "Facturas de Egresos" : "Facturas de Ingresos";
+            LblTitulo.Text = TipoMovimiento == "egreso" ? "Facturas de Débitos" : "Facturas de Créditos";
         }
 
         // ─── Carga el árbol de meses ──────────────────────────────────────────
@@ -305,17 +305,21 @@ namespace SistemaGestion
             };
 
         // ─── Nomenclatura visible según la sección activa ─────────────────────
-        // La barra lateral fija la sección (Ingresos / Egresos): ahí los textos
-        // deben hablar de "ingreso"/"egreso", no del genérico "factura". Solo el
-        // listado combinado sigue diciendo "factura". "Ingreso" y "Egreso" son
+        // La barra lateral fija la sección (Créditos / Débitos): ahí los textos
+        // deben hablar de "crédito"/"débito", no del genérico "factura". Solo el
+        // listado combinado sigue diciendo "factura". "Crédito" y "Débito" son
         // masculinos, "Factura" femenino, así que también cambia el artículo.
+        //
+        // El valor ALMACENADO sigue siendo "ingreso"/"egreso": lo leen el cálculo
+        // de saldos, ValidarPedido y NormalizarMovimiento. Acá se renombra solo lo
+        // que ve el usuario.
         //
         // Ojo: NormalizarMovimiento nunca devuelve "" (todo lo desconocido cae en
         // "ingreso"), así que el genérico se decide por TipoMovimiento crudo.
         private static string NombreDocDe(string movimiento) => movimiento switch
         {
-            "ingreso" => "Ingreso",
-            "egreso"  => "Egreso",
+            "ingreso" => "Crédito",
+            "egreso"  => "Débito",
             _         => "Factura"
         };
 
@@ -323,14 +327,14 @@ namespace SistemaGestion
 
         private string NombreDoc => NombreDocDe(ObtenerFiltroTipo());
 
-        /// <summary>"Nuevo Ingreso" / "Nuevo Egreso" / "Nueva Factura".</summary>
+        /// <summary>"Nuevo Crédito" / "Nuevo Débito" / "Nueva Factura".</summary>
         private static string TituloNuevoDocDe(string movimiento)
         {
             string nombre = NombreDocDe(movimiento);
             return $"{(EsFemeninoDe(nombre) ? "Nueva" : "Nuevo")} {nombre}";
         }
 
-        /// <summary>"este ingreso" / "este egreso" / "esta factura".</summary>
+        /// <summary>"este crédito" / "este débito" / "esta factura".</summary>
         private string EsteDocMinus =>
             $"{(EsFemeninoDe(NombreDoc) ? "esta" : "este")} {NombreDoc.ToLower()}";
 
@@ -339,8 +343,8 @@ namespace SistemaGestion
         {
             LblTitulo.Text = ObtenerFiltroTipo() switch
             {
-                "ingreso" => "Ingresos",
-                "egreso"  => "Egresos",
+                "ingreso" => "Créditos",
+                "egreso"  => "Débitos",
                 _         => "Facturas"
             };
             if (BtnNuevo != null) BtnNuevo.Content = TituloNuevoDocDe(ObtenerFiltroTipo());
@@ -490,8 +494,8 @@ namespace SistemaGestion
 
             ValidarPedido.PedidoValidado  = null;
             ValidarPedido.LineasValidadas = null;
-            string contexto = TipoMovimiento == "egreso"  ? "Facturas de Egresos"
-                              : TipoMovimiento == "ingreso" ? "Facturas de Ingresos" : "Facturas";
+            string contexto = TipoMovimiento == "egreso"  ? "Facturas de Débitos"
+                              : TipoMovimiento == "ingreso" ? "Facturas de Créditos" : "Facturas";
             // Los pedidos siguen siendo venta/compra. El criterio es el de la
             // mercadería, no el del dinero: una compra entra (ingreso) y una venta
             // sale (egreso).

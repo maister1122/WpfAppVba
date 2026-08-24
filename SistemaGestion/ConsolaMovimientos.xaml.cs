@@ -306,8 +306,11 @@ namespace SistemaGestion
                 // Facturas, que ya usa "ingresos"/"egresos".
                 case "repuestas":    TabFijoContenido.Content = _panelRepuestas;    TabFijoTitulo.Text = "Ingresos";     break;
                 case "retirados":    TabFijoContenido.Content = _panelRetirados;    TabFijoTitulo.Text = "Egresos";      break;
-                case "ingresos":     TabFijoContenido.Content = _panelIngresos;     TabFijoTitulo.Text = "Ingresos";     break;
-                case "egresos":      TabFijoContenido.Content = _panelEgresos;      TabFijoTitulo.Text = "Egresos";      break;
+                // Facturas: los movimientos se muestran como Créditos/Débitos. La
+                // clave de sección y el valor almacenado siguen siendo
+                // "ingresos"/"egresos" (los lee el cálculo de saldos y ValidarPedido).
+                case "ingresos":     TabFijoContenido.Content = _panelIngresos;     TabFijoTitulo.Text = "Créditos";     break;
+                case "egresos":      TabFijoContenido.Content = _panelEgresos;      TabFijoTitulo.Text = "Débitos";      break;
                 case "terceros":     TabFijoContenido.Content = _panelTerceros;     TabFijoTitulo.Text = "Terceros";     break;
                 case "familias":     TabFijoContenido.Content = _panelFamilias;     TabFijoTitulo.Text = "Familias";     break;
                 case "productos":    TabFijoContenido.Content = _panelProductos;    TabFijoTitulo.Text = "Productos";    break;
