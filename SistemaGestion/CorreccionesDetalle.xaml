@@ -201,7 +201,9 @@
 
                     <!-- Doc. Corrección -->
                     <StackPanel Grid.Column="0">
-                        <TextBlock Text="Doc. Corrección" Style="{StaticResource LblMuted}"/>
+                        <!-- El texto lo reescribe ActualizarNomenclatura() según el
+                             movimiento: Doc. Repuesta / Doc. Retirado. -->
+                        <TextBlock x:Name="LblDocTipo" Text="Doc. Corrección" Style="{StaticResource LblMuted}"/>
                         <TextBox x:Name="Box_DocumentoC" Style="{StaticResource ModernInput}"
                                  TextChanged="Campo_TextChanged"
                                  PreviewTextInput="Box_Numeros_PreviewTextInput"/>

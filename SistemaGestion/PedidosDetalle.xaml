@@ -231,9 +231,10 @@
                         <ColumnDefinition Width="160"/>
                     </Grid.ColumnDefinitions>
 
-                    <!-- Doc. Pedido -->
+                    <!-- Doc. Pedido — el texto lo reescribe ActualizarNomenclatura()
+                         según el movimiento: Doc. Venta / Doc. Compra. -->
                     <StackPanel Grid.Column="0">
-                        <TextBlock Text="Doc. Pedido" Style="{StaticResource LblMuted}"/>
+                        <TextBlock x:Name="LblDocTipo" Text="Doc. Pedido" Style="{StaticResource LblMuted}"/>
                         <TextBox x:Name="Box_DocumentoP"
                                  Style="{StaticResource ModernInput}"
                                  PreviewTextInput="Box_Numeros_PreviewTextInput"
@@ -323,7 +324,7 @@
             <!-- ──────────────────────────────────────────────────────── -->
             <!-- TAB 1: ARTÍCULOS                                         -->
             <!-- ──────────────────────────────────────────────────────── -->
-            <TabItem Header="Artículos del pedido">
+            <TabItem x:Name="TabArticulos" Header="Artículos del pedido">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>  <!-- toolbar -->
@@ -819,7 +820,7 @@
 
                     <!-- ── Grupo PEDIDOS ── -->
                     <StackPanel Orientation="Vertical" Margin="0,0,10,0">
-                        <TextBlock Text="Pedidos" Style="{StaticResource SectionHeader}"/>
+                        <TextBlock x:Name="LblGrupoTotales" Text="Pedidos" Style="{StaticResource SectionHeader}"/>
                         <StackPanel Orientation="Horizontal">
                             <!-- Total unidades -->
                             <Border Style="{StaticResource MetricCard}" Margin="0,0,8,0" VerticalAlignment="Top">

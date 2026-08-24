@@ -218,6 +218,7 @@ namespace SistemaGestion
                 "repuesta" => "Repuestas de Stock (error de registro, registros omitidos)",
                 _          => "Correcciones de Stock (Repuestas y Retirados)"
             };
+            ActualizarNomenclatura();
             int año = AppState.DataFechaFinal.Year > 2000
                 ? AppState.DataFechaFinal.Year
                 : DateTime.Now.Year;
@@ -266,6 +267,39 @@ namespace SistemaGestion
         /// correcciones cargadas antes del cambio de vocabulario guardaron
         /// "ingreso"/"egreso": se leen como su equivalente.
         /// </summary>
+        // ─── Nomenclatura visible según la sección activa ─────────────────────
+        // La barra lateral fija la sección (Repuestas / Retirados): ahí los textos
+        // deben hablar de "repuesta"/"retirado", no del genérico "corrección". Solo
+        // el listado combinado sigue diciendo "corrección". Ojo con el género:
+        // "Repuesta" y "Corrección" son femeninos, pero "Retirado" es masculino.
+        private static string NombreDocDe(string movimiento) => NormalizarMovimiento(movimiento) switch
+        {
+            "repuesta" => "Repuesta",
+            "retirado" => "Retirado",
+            _          => "Corrección"
+        };
+
+        private static bool EsFemeninoDe(string nombreDoc) => nombreDoc != "Retirado";
+
+        private string NombreDoc => NombreDocDe(ObtenerFiltroTipo());
+
+        /// <summary>"Nueva Repuesta" / "Nuevo Retirado" / "Nueva Corrección".</summary>
+        private static string TituloNuevoDocDe(string movimiento)
+        {
+            string nombre = NombreDocDe(movimiento);
+            return $"{(EsFemeninoDe(nombre) ? "Nueva" : "Nuevo")} {nombre}";
+        }
+
+        /// <summary>"esta repuesta" / "este retirado" / "esta corrección".</summary>
+        private string EsteDocMinus =>
+            $"{(EsFemeninoDe(NombreDoc) ? "esta" : "este")} {NombreDoc.ToLower()}";
+
+        // Refresca los textos que dependen de la sección/filtro activo.
+        private void ActualizarNomenclatura()
+        {
+            if (BtnNuevo != null) BtnNuevo.Content = TituloNuevoDocDe(ObtenerFiltroTipo());
+        }
+
         private static string NormalizarMovimiento(string? mov) =>
             (mov ?? "").ToLower() switch
             {
@@ -454,8 +488,13 @@ namespace SistemaGestion
 
             var consola = Window.GetWindow(this) as ConsolaMovimientos;
             if (consola == null) return;
-            string titulo = "Nueva Corrección";
-            string clave  = "nueva-correccion";
+            // El título sigue al movimiento REAL del documento que se está creando
+            // (AppState.TipoCorreccion), no al filtro.
+            string titulo = TituloNuevoDocDe(AppState.TipoCorreccion);
+            // La clave incluye el movimiento: con una sola clave compartida, abrir
+            // una repuesta teniendo abierto un retirado reutilizaba esa pestaña
+            // (AbrirPestaña matchea por clave) y caías en el formulario equivocado.
+            string clave  = $"nueva-correccion-{AppState.TipoCorreccion}";
             var dlg = new CorreccionesDetalle(this, tituloTab: titulo);
             dlg.Cerrando += () =>
             {
@@ -488,7 +527,7 @@ namespace SistemaGestion
             // Verificación de conexión en 2 capas antes de persistir el borrado.
             if (!FuncionesComunes.VerificarConexionParaGuardar(Window.GetWindow(this))) return;
 
-            var res = MessageBox.Show("¿Eliminar esta corrección y todas sus líneas?", "Consola",
+            var res = MessageBox.Show($"¿Eliminar {EsteDocMinus} y todas sus líneas?", "Consola",
                 MessageBoxButton.YesNo, MessageBoxImage.Question);
             if (res != MessageBoxResult.Yes) return;
 
@@ -560,7 +599,10 @@ namespace SistemaGestion
 
             var consola = Window.GetWindow(this) as ConsolaMovimientos;
             if (consola == null) return;
-            string titulo = $"Corrección {fila.Codigo}";
+            // El título usa el movimiento REAL del documento (ya resuelto arriba en
+            // AppState.TipoCorreccion), no el filtro: en el listado combinado
+            // conviven repuestas y retirados y cada pestaña debe decir lo que es.
+            string titulo = $"{NombreDocDe(AppState.TipoCorreccion)} {fila.Codigo}";
             var dlg = new CorreccionesDetalle(this, idSel, tituloTab: titulo);
             dlg.Cerrando += () =>
             {

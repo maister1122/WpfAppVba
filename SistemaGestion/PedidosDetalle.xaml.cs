@@ -67,6 +67,28 @@ namespace SistemaGestion
         public void CambiarTipoMovimiento(string tipo)
         {
             AppState.TipoMovimiento = tipo.ToLower();
+            // Refrescar los textos: antes solo cambiaba el estado y las etiquetas
+            // quedaban mostrando el movimiento anterior.
+            if (!_iniciado) return;
+            string t = AppState.TipoMovimiento;
+            LblTitulo.Text = t == "venta" ? "Venta de Productos" : "Compra de Productos";
+            if (TabCobros != null) TabCobros.Header = t == "venta" ? "Cobros" : "Pagos";
+            BtnCobrarDocumento.Content = t == "venta" ? "Cobrar Documento" : "Pagar Documento";
+            ActualizarNomenclatura(t);
+        }
+
+        // ─── Nomenclatura visible según el movimiento ─────────────────────────
+        // El formulario es el mismo para ventas y compras, así que las etiquetas
+        // genéricas ("Doc. Pedido", "Artículos del pedido", grupo "Pedidos") se
+        // reescriben con el nombre que corresponde. "Venta"/"Compra" son femeninos.
+        private void ActualizarNomenclatura(string tipo)
+        {
+            string nombre = tipo == "venta" ? "Venta" : "Compra";
+            string plural = tipo == "venta" ? "Ventas" : "Compras";
+            LblDocTipo.Text       = $"Doc. {nombre}";
+            LblGrupoTotales.Text  = plural;
+            if (TabArticulos != null)
+                TabArticulos.Header = $"Artículos de la {nombre.ToLower()}";
         }
 
         // ─── Carga inicial ────────────────────────────────────────────────────
@@ -81,6 +103,7 @@ namespace SistemaGestion
             if (TabCobros != null)
                 TabCobros.Header = tipo == "venta" ? "Cobros" : "Pagos";
             BtnCobrarDocumento.Content = tipo == "venta" ? "Cobrar Documento" : "Pagar Documento";
+            ActualizarNomenclatura(tipo);
 
             // tipoPedido = "rapido" → ocultar tabs de cobros y entregas
             string tipoPedido = AppState.TipoPedido.ToLower();

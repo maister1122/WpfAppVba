@@ -240,6 +240,7 @@ namespace SistemaGestion
             LblSubtitulo.Text = string.IsNullOrEmpty(_mesActivo)
                 ? año.ToString()
                 : $"{_mesActivo} {año}";
+            ActualizarNomenclatura();
 
             OcultarDetalle();
             SeleccionarFilaMasReciente(filaMasReciente);
@@ -302,6 +303,48 @@ namespace SistemaGestion
                 "egreso" or "venta" => "egreso",
                 _                   => "ingreso"
             };
+
+        // ─── Nomenclatura visible según la sección activa ─────────────────────
+        // La barra lateral fija la sección (Ingresos / Egresos): ahí los textos
+        // deben hablar de "ingreso"/"egreso", no del genérico "factura". Solo el
+        // listado combinado sigue diciendo "factura". "Ingreso" y "Egreso" son
+        // masculinos, "Factura" femenino, así que también cambia el artículo.
+        //
+        // Ojo: NormalizarMovimiento nunca devuelve "" (todo lo desconocido cae en
+        // "ingreso"), así que el genérico se decide por TipoMovimiento crudo.
+        private static string NombreDocDe(string movimiento) => movimiento switch
+        {
+            "ingreso" => "Ingreso",
+            "egreso"  => "Egreso",
+            _         => "Factura"
+        };
+
+        private static bool EsFemeninoDe(string nombreDoc) => nombreDoc == "Factura";
+
+        private string NombreDoc => NombreDocDe(ObtenerFiltroTipo());
+
+        /// <summary>"Nuevo Ingreso" / "Nuevo Egreso" / "Nueva Factura".</summary>
+        private static string TituloNuevoDocDe(string movimiento)
+        {
+            string nombre = NombreDocDe(movimiento);
+            return $"{(EsFemeninoDe(nombre) ? "Nueva" : "Nuevo")} {nombre}";
+        }
+
+        /// <summary>"este ingreso" / "este egreso" / "esta factura".</summary>
+        private string EsteDocMinus =>
+            $"{(EsFemeninoDe(NombreDoc) ? "esta" : "este")} {NombreDoc.ToLower()}";
+
+        // Refresca los textos que dependen de la sección activa.
+        private void ActualizarNomenclatura()
+        {
+            LblTitulo.Text = ObtenerFiltroTipo() switch
+            {
+                "ingreso" => "Ingresos",
+                "egreso"  => "Egresos",
+                _         => "Facturas"
+            };
+            if (BtnNuevo != null) BtnNuevo.Content = TituloNuevoDocDe(ObtenerFiltroTipo());
+        }
 
         // ─── Nombre de mes ────────────────────────────────────────────────────
         private static string ObtenerNombreMes(int mes)
@@ -472,8 +515,13 @@ namespace SistemaGestion
         private void AbrirNuevaFactura(ConsolaMovimientos consola, string desdePedidoId,
                                        List<FacturaLineaValidada>? lineas)
         {
-            string titulo = "Nueva Factura";
-            string clave  = "nueva-factura";
+            // El título y la clave siguen al movimiento con el que se crea el
+            // documento (TipoMovimiento de la sección). Con una sola clave
+            // compartida, abrir un ingreso teniendo abierto un egreso reutilizaba
+            // esa pestaña (AbrirPestaña matchea por clave) y caías en el
+            // formulario equivocado.
+            string titulo = TituloNuevoDocDe(TipoMovimiento);
+            string clave  = $"nueva-factura-{TipoMovimiento}";
             var dlg = new FacturasDetalle(this, tituloTab: titulo,
                                           desdePedidoId: desdePedidoId,
                                           lineasDesdePedido: lineas,
@@ -503,7 +551,7 @@ namespace SistemaGestion
             // Verificación de conexión en 2 capas antes de persistir el borrado.
             if (!FuncionesComunes.VerificarConexionParaGuardar(Window.GetWindow(this))) return;
 
-            var res = MessageBox.Show("¿Eliminar esta factura y todas sus líneas?", "Consola",
+            var res = MessageBox.Show($"¿Eliminar {EsteDocMinus} y todas sus líneas?", "Consola",
                 MessageBoxButton.YesNo, MessageBoxImage.Question);
             if (res != MessageBoxResult.Yes) return;
 
@@ -572,7 +620,11 @@ namespace SistemaGestion
 
             var consola = Window.GetWindow(this) as ConsolaMovimientos;
             if (consola == null) return;
-            string titulo = $"Factura {fila.Codigo}";
+            // El título usa el movimiento REAL del documento, no el filtro: en el
+            // listado combinado conviven ingresos y egresos y cada pestaña debe
+            // decir lo que es.
+            string movDoc = NormalizarMovimiento(Sql.DocumentosFObj.ObtenerItem("movimiento", idSel)?.ToString());
+            string titulo = $"{NombreDocDe(movDoc)} {fila.Codigo}";
             var dlg = new FacturasDetalle(this, idSel, tituloTab: titulo);
             dlg.Cerrando += () =>
             {

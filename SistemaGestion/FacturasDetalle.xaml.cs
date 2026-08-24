@@ -596,7 +596,12 @@ namespace SistemaGestion
 
             // Título, ícono y color del encabezado según el movimiento.
             bool esEgreso = MovimientoSeleccionado == "egreso";
-            LblTitulo.Text          = esEgreso ? "Egreso de Factura" : "Ingreso de Factura";
+            string nombreMov = esEgreso ? "Egreso" : "Ingreso";
+            LblTitulo.Text          = $"{nombreMov} de Factura";
+            // Etiquetas genéricas -> nombre del movimiento (ver nomenclatura por
+            // sección en FacturasGeneral).
+            LblDocTipo.Text         = $"Doc. {nombreMov}";
+            if (TabLineas != null) TabLineas.Header = $"Líneas del {nombreMov.ToLower()}";
             LblIconoTipo.Text       = esEgreso ? "EG" : "IN";
             // Ingreso en verde, egreso en rojo.
             LblIconoTipo.Foreground = esEgreso

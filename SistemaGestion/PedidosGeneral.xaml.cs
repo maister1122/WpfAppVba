@@ -243,6 +243,7 @@ namespace SistemaGestion
                 "compra" => "Compras de Productos",
                 _        => "Pedidos (Ventas y Compras)"
             };
+            ActualizarNomenclatura();
             int año = AppState.DataFechaFinal.Year > 2000
                 ? AppState.DataFechaFinal.Year
                 : DateTime.Now.Year;
@@ -295,6 +296,49 @@ namespace SistemaGestion
 
         // El movimiento lo fija la sección del panel lateral; vacío = ventas y compras.
         private string ObtenerFiltroTipo() => TipoMovimiento;
+
+        // ─── Nomenclatura visible según la sección activa ─────────────────────
+        // La barra lateral fija la sección (Ventas / Compras): ahí los textos deben
+        // hablar de "venta"/"compra", no del genérico "pedido". Solo el listado
+        // combinado sigue diciendo "pedido". "Venta"/"Compra" son femeninos y
+        // "Pedido" masculino, así que también cambian el artículo y el adjetivo.
+        private string NombreDoc => ObtenerFiltroTipo() switch
+        {
+            "venta"  => "Venta",
+            "compra" => "Compra",
+            _        => "Pedido"
+        };
+
+        private bool EsFemenino => NombreDoc != "Pedido";
+
+        /// <summary>"Nueva Venta Rápida" / "Nuevo Pedido Rápido" / …</summary>
+        private string TituloNuevoDoc(string tipoPedido)
+        {
+            string articulo = EsFemenino ? "Nueva" : "Nuevo";
+            // "Normal" es invariable; "Rápido/Rápida" concuerda con el sustantivo.
+            string variante = tipoPedido == "rapido"
+                ? (EsFemenino ? "Rápida" : "Rápido")
+                : "Normal";
+            return $"{articulo} {NombreDoc} {variante}";
+        }
+
+        /// <summary>"esta venta" / "esta compra" / "este pedido".</summary>
+        private string EsteDocMinus => $"{(EsFemenino ? "esta" : "este")} {NombreDoc.ToLower()}";
+
+        /// <summary>Nombre del documento a partir de su movimiento real (para pestañas).</summary>
+        private static string NombreDocDe(string movimiento) => movimiento switch
+        {
+            "venta"  => "Venta",
+            "compra" => "Compra",
+            _        => "Pedido"
+        };
+
+        // Refresca los textos que dependen de la sección activa.
+        private void ActualizarNomenclatura()
+        {
+            if (BtnNuevoRapido != null) BtnNuevoRapido.Content = TituloNuevoDoc("rapido");
+            if (BtnNuevoNormal != null) BtnNuevoNormal.Content = TituloNuevoDoc("normal");
+        }
 
         // ─── Nombre de mes ────────────────────────────────────────────────────
         private static string ObtenerNombreMes(int mes)
@@ -519,8 +563,18 @@ namespace SistemaGestion
             AppState.TipoMovimiento = string.IsNullOrEmpty(filtroTipo) ? "venta" : filtroTipo;
             var consola = Window.GetWindow(this) as ConsolaMovimientos;
             if (consola == null) return;
-            string titulo = tipoPedido == "rapido" ? "Nuevo Pedido Rápido" : "Nuevo Pedido Normal";
-            string clave  = "nuevo-pedido";
+            // El título sigue al movimiento REAL del documento que se está creando
+            // (AppState.TipoMovimiento), no al filtro: si se llega por un acceso
+            // rápido del top bar, el tipoMovimiento recibido manda.
+            string nombreMov = NombreDocDe(AppState.TipoMovimiento);
+            bool   femenino  = nombreMov != "Pedido";
+            string variante  = tipoPedido == "rapido" ? (femenino ? "Rápida" : "Rápido") : "Normal";
+            string titulo = $"{(femenino ? "Nueva" : "Nuevo")} {nombreMov} {variante}";
+            // La clave incluye movimiento y tipo: con una sola clave compartida,
+            // abrir una venta teniendo abierta una compra (o el normal teniendo
+            // abierto el rápido) reutilizaba esa pestaña —AbrirPestaña matchea por
+            // clave— y caías en el formulario equivocado.
+            string clave  = $"nuevo-pedido-{AppState.TipoMovimiento}-{tipoPedido}";
             var dlg = new PedidosDetalle(this, tituloTab: titulo);
             dlg.Cerrando += () =>
             {
@@ -553,7 +607,7 @@ namespace SistemaGestion
             // Verificación de conexión en 2 capas antes de persistir el borrado.
             if (!FuncionesComunes.VerificarConexionParaGuardar(Window.GetWindow(this))) return;
 
-            var res = MessageBox.Show("¿Eliminar este pedido y todos sus artículos?", "Consola",
+            var res = MessageBox.Show($"¿Eliminar {EsteDocMinus} y todos sus artículos?", "Consola",
                 MessageBoxButton.YesNo, MessageBoxImage.Question);
 
             if (res != MessageBoxResult.Yes) return;
@@ -623,7 +677,11 @@ namespace SistemaGestion
             AppState.TipoPedido     = Sql.DocumentosPObj.ObtenerItem("tipo",       docSel)?.ToString() ?? "rapido";
             var consola = Window.GetWindow(this) as ConsolaMovimientos;
             if (consola == null) return;
-            var dlg = new PedidosDetalle(this, docSel, tituloTab: $"Pedido {fila.Codigo}");
+            // El título usa el movimiento REAL del documento (ya resuelto arriba en
+            // AppState.TipoMovimiento), no el filtro activo: en el listado combinado
+            // conviven ventas y compras y cada pestaña debe decir lo que es.
+            string tituloDoc = $"{NombreDocDe(AppState.TipoMovimiento)} {fila.Codigo}";
+            var dlg = new PedidosDetalle(this, docSel, tituloTab: tituloDoc);
             dlg.Cerrando += () =>
             {
                 consola.CerrarPestaña(dlg);
@@ -638,7 +696,7 @@ namespace SistemaGestion
                 }
                 GridFocusHelper.EnfocarCeldaSeleccionada(Grid1);
             };
-            consola.AbrirPestaña($"Pedido {fila.Codigo}", dlg, $"pedido-{docSel}");
+            consola.AbrirPestaña(tituloDoc, dlg, $"pedido-{docSel}");
         }
     }
 

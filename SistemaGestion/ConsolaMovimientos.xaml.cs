@@ -638,10 +638,15 @@ namespace SistemaGestion
         }
 
         // ─── Accesos rápidos del top bar ──────────────────────────────────────
-        private PedidosDetalle? BuscarTabPedidoRapido()
+        // Ventas y Compras tienen ahora su propia pestaña "nuevo rápido" (clave
+        // "nuevo-pedido-{movimiento}-{tipo}"), así que la búsqueda es por movimiento.
+        // Antes compartían la clave "nuevo-pedido": había una sola pestaña y el
+        // acceso rápido del otro movimiento la reutilizaba dándola vuelta con
+        // CambiarTipoMovimiento, lo que dejaba el título de la pestaña desactualizado.
+        private PedidosDetalle? BuscarTabPedidoRapido(string movimiento)
         {
             foreach (TabItem t in TabContenido.Items)
-                if (t.Tag as string == "nuevo-pedido" && t.Content is PedidosDetalle pd) return pd;
+                if (t.Tag as string == $"nuevo-pedido-{movimiento}-rapido" && t.Content is PedidosDetalle pd) return pd;
             return null;
         }
 
@@ -661,8 +666,10 @@ namespace SistemaGestion
         {
             MostrarPanel("ventas");
             MarcarActivo(BtnNav_Ventas);
-            var existing = BuscarTabPedidoRapido();
-            if (existing != null) { existing.CambiarTipoMovimiento("venta"); foreach (TabItem t in TabContenido.Items) if (t.Content == existing) { TabContenido.SelectedItem = t; break; } }
+            // La pestaña encontrada ya es de este movimiento (la clave lo incluye):
+            // solo hay que seleccionarla, no darla vuelta.
+            var existing = BuscarTabPedidoRapido("venta");
+            if (existing != null) { foreach (TabItem t in TabContenido.Items) if (t.Content == existing) { TabContenido.SelectedItem = t; break; } }
             else _panelVentas.AbrirNuevoPedido("rapido", "venta");
         }
 
@@ -670,8 +677,10 @@ namespace SistemaGestion
         {
             MostrarPanel("compras");
             MarcarActivo(BtnNav_Compras);
-            var existing = BuscarTabPedidoRapido();
-            if (existing != null) { existing.CambiarTipoMovimiento("compra"); foreach (TabItem t in TabContenido.Items) if (t.Content == existing) { TabContenido.SelectedItem = t; break; } }
+            // La pestaña encontrada ya es de este movimiento (la clave lo incluye):
+            // solo hay que seleccionarla, no darla vuelta.
+            var existing = BuscarTabPedidoRapido("compra");
+            if (existing != null) { foreach (TabItem t in TabContenido.Items) if (t.Content == existing) { TabContenido.SelectedItem = t; break; } }
             else _panelCompras.AbrirNuevoPedido("rapido", "compra");
         }
 

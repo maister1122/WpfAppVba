@@ -223,7 +223,9 @@
 
                     <!-- Doc. Factura -->
                     <StackPanel Grid.Column="0">
-                        <TextBlock Text="Doc. Factura" Style="{StaticResource LblMuted}"/>
+                        <!-- El texto lo reescribe ActualizarBadges() según el
+                             movimiento: Doc. Ingreso / Doc. Egreso. -->
+                        <TextBlock x:Name="LblDocTipo" Text="Doc. Factura" Style="{StaticResource LblMuted}"/>
                         <TextBox x:Name="Box_DocumentoF" Style="{StaticResource ModernInput}"
                                  IsEnabled="False"
                                  TextChanged="Campo_TextChanged"/>
@@ -327,7 +329,7 @@
             <!-- ──────────────────────────────────────────────────── -->
             <!-- TAB 1: LÍNEAS DE LA FACTURA                          -->
             <!-- ──────────────────────────────────────────────────── -->
-            <TabItem Header="Líneas de la factura">
+            <TabItem x:Name="TabLineas" Header="Líneas de la factura">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>

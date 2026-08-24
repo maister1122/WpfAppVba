@@ -72,21 +72,28 @@ namespace SistemaGestion
             {
                 _movimiento      = NormalizarMovimiento(Sql.DocumentosCObj.ObtenerItem("movimiento", _idEditar)?.ToString());
                 string tipoLabel = _movimiento == "repuesta" ? "Repuesta" : "Retirado";
-                LblTitulo.Text   = $"Editar Corrección de {tipoLabel}";
+                LblTitulo.Text   = $"Editar {tipoLabel}";
                 CargarParaEditar();
             }
             else
             {
                 _movimiento      = NormalizarMovimiento(AppState.TipoCorreccion);
                 string tipoLabel = _movimiento == "repuesta" ? "Repuesta" : "Retirado";
-                LblTitulo.Text   = $"Corrección de {tipoLabel}";
+                LblTitulo.Text   = $"{tipoLabel} de Stock";
                 CargarParaNuevo();
             }
+            ActualizarNomenclatura();
 
             ActualizarBadge();
             _cargando   = false;
             _hayCambios = false;
         }
+
+        // ─── Nomenclatura visible según el movimiento ─────────────────────────
+        // El formulario es el mismo para repuestas y retirados, así que la etiqueta
+        // genérica "Doc. Corrección" se reescribe con el nombre que corresponde.
+        private void ActualizarNomenclatura()
+            => LblDocTipo.Text = $"Doc. {(_movimiento == "repuesta" ? "Repuesta" : "Retirado")}";
 
         private void CargarParaEditar()
         {
