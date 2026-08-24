@@ -293,6 +293,32 @@ namespace SistemaGestion
             return estadoV != "ocultar";
         }
 
+        // ─── Orden de los informes: Producto → Familia → Índice ───────────────
+        // Mismo criterio que los informes de ArticulosGeneral. El índice es
+        // numérico, así que se compara como número (como texto pondría el 10 antes
+        // del 2); cuando falta cuenta como 0.
+        private static int IndiceArticulo(string artId)
+            => int.TryParse(Sql.ArticulosObj.ObtenerItem("indice", artId)?.ToString(), out int ix) ? ix : 0;
+
+        /// <summary>
+        /// Ids de los artículos que siguen en el catálogo en memoria (ArticulosObj
+        /// solo trae los 'normal'). Lo que no está acá es un artículo eliminado u
+        /// oculto que igual quedó registrado en el documento: no cuelga de ningún
+        /// producto/familia, así que en los informes va al FINAL (mismo criterio que
+        /// el nodo "Eliminados" de InventariosDetalle).
+        /// </summary>
+        private static HashSet<string> ObtenerArticulosEnCatalogo()
+        {
+            var enCatalogo = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            int uf = Sql.ArticulosObj.ContarFilas;
+            for (int i = 1; i <= uf; i++)
+            {
+                var idObj = Sql.ArticulosObj.Mover(i);
+                if (idObj != null) enCatalogo.Add(idObj.ToString()!);
+            }
+            return enCatalogo;
+        }
+
         // ─── Crear Plantilla: elige Excel o PDF, después guarda y abre el archivo ──
         // Mismo patrón que VisorEmpresa/PreciosGeneral.BtnCrearPlantilla_Click. Excel:
         // catálogo completo, sin agrupar, con columnas Producto y Familia (N° / Código /
@@ -348,8 +374,9 @@ namespace SistemaGestion
             ws.Cell(1, 6).Value = "Cantidad";
 
             // Sin reordenar: Sql.ArticulosObj ya viene cargado en cascada Producto →
-            // Familia → Índice (ver AppLoader.cs), el mismo orden que usan
-            // InventariosDetalle y ArticulosGeneral.
+            // Familia → Índice (ver AppLoader.cs), que es justo el orden que pide el
+            // informe — el mismo que usan InventariosDetalle y ArticulosGeneral.
+            // Acá tampoco hay eliminados: se recorre el catálogo vivo.
             int row = 2;
             int numero = 1;
             int uf = Sql.ArticulosObj.ContarFilas;
@@ -479,7 +506,7 @@ namespace SistemaGestion
 
             DibujarEncabezadoColumnas();
 
-            var lineas = new List<(string prodDesc, string famDesc, string codigo, string desc)>();
+            var lineas = new List<(string prodDesc, string famDesc, string codigo, string desc, int indice)>();
 
             int uf = Sql.ArticulosObj.ContarFilas;
             for (int i = 1; i <= uf; i++)
@@ -498,9 +525,11 @@ namespace SistemaGestion
                 string modelo   = Sql.ArticulosObj.ObtenerItem("modelo",      artId)?.ToString() ?? "";
                 string descCompleta = FuncionesComunes.UnirVariables(desc, famDesc, modelo);
 
-                lineas.Add((prodDesc, famDesc, codigo, descCompleta));
+                lineas.Add((prodDesc, famDesc, codigo, descCompleta, IndiceArticulo(artId)));
             }
 
+            // Producto → Familia (banda de grupo) → Índice dentro de la familia.
+            // Acá no hay eliminados: se recorre el catálogo vivo (ArticulosObj).
             var grupos = lineas
                 .GroupBy(l => (l.prodDesc, l.famDesc))
                 .OrderBy(g => g.Key.prodDesc, StringComparer.OrdinalIgnoreCase)
@@ -512,7 +541,8 @@ namespace SistemaGestion
                 AsegurarEspacio(altoGrupo + altoFila);
                 DibujarBandaGrupo($"{grupo.Key.prodDesc} & {grupo.Key.famDesc}");
 
-                foreach (var l in grupo)
+                foreach (var l in grupo.OrderBy(x => x.indice)
+                                       .ThenBy(x => x.codigo, StringComparer.OrdinalIgnoreCase))
                 {
                     AsegurarEspacio(altoFila);
                     n++;
@@ -731,8 +761,9 @@ namespace SistemaGestion
 
             DibujarEncabezadoColumnas();
 
-            var lineas = new List<(string prodDesc, string famDesc, string codigo, string desc, double cantidad, string catDesc)>();
+            var lineas = new List<(string prodDesc, string famDesc, string codigo, string desc, double cantidad, string catDesc, int indice, bool eliminado)>();
 
+            var enCatalogo = ObtenerArticulosEnCatalogo();
             int uf = Sql.InventariosObj.ContarFilas;
             for (int i = 1; i <= uf; i++)
             {
@@ -757,21 +788,32 @@ namespace SistemaGestion
                 string catDesc = string.IsNullOrEmpty(catId) ? "" : (Sql.CategoriasObj.ObtenerItem("descripcion", catId)?.ToString() ?? "");
                 string descCompleta = FuncionesComunes.UnirVariables(descArt, famDesc, modelo);
 
-                lineas.Add((prodDesc, famDesc, codigo, descCompleta, cantidad, catDesc));
+                lineas.Add((prodDesc, famDesc, codigo, descCompleta, cantidad, catDesc,
+                            IndiceArticulo(artId), !enCatalogo.Contains(artId)));
             }
 
+            // ── Grupos: Producto → Familia, con los eliminados en un único grupo al
+            //    final (no cuelgan de ningún producto/familia: sin esto encabezaban
+            //    el informe con una banda vacía " & ").
             var grupos = lineas
-                .GroupBy(l => (l.prodDesc, l.famDesc))
-                .OrderBy(g => g.Key.prodDesc, StringComparer.OrdinalIgnoreCase)
+                .GroupBy(l => (l.eliminado, l.prodDesc, l.famDesc))
+                .OrderBy(g => g.Key.eliminado)
+                .ThenBy(g => g.Key.prodDesc, StringComparer.OrdinalIgnoreCase)
                 .ThenBy(g => g.Key.famDesc, StringComparer.OrdinalIgnoreCase);
 
             int n = 0;
             foreach (var grupo in grupos)
             {
                 AsegurarEspacio(altoGrupo + altoFila);
-                DibujarBandaGrupo($"{grupo.Key.prodDesc} & {grupo.Key.famDesc}");
+                DibujarBandaGrupo(grupo.Key.eliminado
+                    ? "Eliminados"
+                    : $"{grupo.Key.prodDesc} & {grupo.Key.famDesc}");
 
-                foreach (var l in grupo)
+                // Dentro del grupo, por índice dentro de la familia (antes salían en
+                // el orden en que se leyeron las líneas del documento). El código
+                // desempata para que el orden sea estable si comparten índice.
+                foreach (var l in grupo.OrderBy(x => x.indice)
+                                       .ThenBy(x => x.codigo, StringComparer.OrdinalIgnoreCase))
                 {
                     AsegurarEspacio(altoFila);
                     n++;
@@ -891,7 +933,8 @@ namespace SistemaGestion
             ws.Cell(1, 7).Value = "Cantidad";
 
             int uf = Sql.InventariosObj.ContarFilas;
-            var lineas = new List<(string prodDesc, string famDesc, string codigo, string desc, double cantidad, string catDesc)>();
+            var lineas = new List<(string prodDesc, string famDesc, string codigo, string desc, double cantidad, string catDesc, int indice, bool eliminado)>();
+            var enCatalogo = ObtenerArticulosEnCatalogo();
 
             for (int i = 1; i <= uf; i++)
             {
@@ -915,8 +958,26 @@ namespace SistemaGestion
                 string catDesc = string.IsNullOrEmpty(catId) ? "Otros" : (Sql.CategoriasObj.ObtenerItem("descripcion", catId)?.ToString() ?? "Otros");
                 string descCompleta = FuncionesComunes.UnirVariables(descArt, famDesc, modelo);
 
-                lineas.Add((prodDesc, famDesc, codigo, descCompleta, cantidad, catDesc));
+                lineas.Add((prodDesc, famDesc, codigo, descCompleta, cantidad, catDesc,
+                            IndiceArticulo(artId), !enCatalogo.Contains(artId)));
             }
+
+            // ── Ordenar por Producto → Familia → Índice dentro de la familia, con
+            //    los eliminados al final (no cuelgan de ningún producto/familia, así
+            //    que sin esto salían primero, con Producto y Familia en blanco).
+            //    El código desempata: List.Sort no es estable.
+            lineas.Sort((a, b) =>
+            {
+                int cmp = a.eliminado.CompareTo(b.eliminado);
+                if (cmp != 0) return cmp;
+                cmp = string.Compare(a.prodDesc, b.prodDesc, StringComparison.OrdinalIgnoreCase);
+                if (cmp != 0) return cmp;
+                cmp = string.Compare(a.famDesc, b.famDesc, StringComparison.OrdinalIgnoreCase);
+                if (cmp != 0) return cmp;
+                cmp = a.indice.CompareTo(b.indice);
+                if (cmp != 0) return cmp;
+                return string.Compare(a.codigo, b.codigo, StringComparison.OrdinalIgnoreCase);
+            });
 
             int row = 2;
             int n = 0;
