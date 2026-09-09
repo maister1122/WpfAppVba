@@ -318,9 +318,13 @@ namespace SistemaGestion
                 ws.Cell(filaActual, 6).Value = item.Stock;        // sistema
                 // G (revicion), J (hoja), K (referecia), L (observacion): en blanco a
                 // propósito — los completa quien hace el conteo físico.
+                // Referencias planas (F/G/H/I/M), no Tabla1[[#This Row],[...]]: Google
+                // Sheets no tiene el concepto de Tabla de Excel y al importar convierte
+                // cada referencia estructurada en una celda fija de la hoja ("Arqueo!$G12"),
+                // lo que rompe la fórmula si se mezcla con referencias planas al mismo rango.
                 ws.Cell(filaActual, 8).FormulaA1 =
-                    $"=IF(AND(Tabla1[[#This Row],[sistema]]=\"\",Tabla1[[#This Row],[revicion]]=\"\"),\"\"," +
-                    $"IF(AND(Tabla1[[#This Row],[sistema]]=0,Tabla1[[#This Row],[revicion]]=\"\"),0," +
+                    $"=IF(AND(F{filaActual}=\"\",G{filaActual}=\"\"),\"\"," +
+                    $"IF(AND(F{filaActual}=0,G{filaActual}=\"\"),0," +
                     $"IF(G{filaActual}=\"X\",F{filaActual},IF(G{filaActual}<>\"X\",G{filaActual}))))";
                 ws.Cell(filaActual, 9).FormulaA1 =
                     $"=IF(AND(G{filaActual}=\"\",F{filaActual}=\"\"),\"\"," +
@@ -328,11 +332,11 @@ namespace SistemaGestion
                     $"IF(AND(G{filaActual}=\"\",F{filaActual}<>\"\"),\"NO REVISADO\"," +
                     $"IF(AND(G{filaActual}=\"X\",F{filaActual}<>\"\"),\"IGUALA\",\"ERROR\"))))";
                 ws.Cell(filaActual, 13).FormulaA1 =
-                    "=IF(OR(Tabla1[[#This Row],[estado]]=\"\",Tabla1[[#This Row],[estado]]=\"NO REVISADO\"),\"\"," +
-                    "IF(Tabla1[[#This Row],[inventario]]<Tabla1[[#This Row],[sistema]],\"FALTA\"," +
-                    "IF(Tabla1[[#This Row],[inventario]]>Tabla1[[#This Row],[sistema]],\"SOBRA\",\"\")))";
+                    $"=IF(OR(I{filaActual}=\"\",I{filaActual}=\"NO REVISADO\"),\"\"," +
+                    $"IF(H{filaActual}<F{filaActual},\"FALTA\"," +
+                    $"IF(H{filaActual}>F{filaActual},\"SOBRA\",\"\")))";
                 ws.Cell(filaActual, 14).FormulaA1 =
-                    "=IF(Tabla1[[#This Row],[diferencia]]<>\"\",ABS(Tabla1[[#This Row],[sistema]]-Tabla1[[#This Row],[inventario]]),\"\")";
+                    $"=IF(M{filaActual}<>\"\",ABS(F{filaActual}-H{filaActual}),\"\")";
                 filaActual++;
             }
             int filaDatosFin = filaActual - 1;
