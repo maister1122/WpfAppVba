@@ -205,6 +205,15 @@ namespace SistemaGestion
             LblUsuario.Text  = $"Usuario: {nombres}  |  Período: {AppState.PeriodoActivo}";
             LblSucursal.Text = $"Sucursal: {sucursalDesc}";
             LblEmpresa.Text  = $"Empresa: {empresaDesc}";
+
+            // Compras y Créditos: solo visibles para admin. BtnQuick_Compra es el
+            // acceso rápido de la top bar hacia el mismo panel "compras" — sin
+            // ocultarlo también, un usuario tipo "user" podría llegar igual sin
+            // pasar por el botón del sidebar.
+            var visibilidadAdmin = AppState.EsAdmin ? Visibility.Visible : Visibility.Collapsed;
+            BtnNav_Compras.Visibility  = visibilidadAdmin;
+            BtnNav_Ingresos.Visibility = visibilidadAdmin;
+            BtnQuick_Compra.Visibility = visibilidadAdmin;
         }
 
         // ─── Tema claro / oscuro (antes vivía en Configuración; ahora es un
