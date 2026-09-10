@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
@@ -109,8 +110,9 @@ namespace SistemaGestion
 
         // ─── Restricción de entrada para celdas de Cantidad ──────────────────
         /// <summary>
-        /// Restringe un TextBox a una cantidad numérica: solo dígitos, separador de
-        /// miles (,) y un único separador decimal (.). Bloquea letras y otros caracteres,
+        /// Restringe un TextBox a una cantidad numérica: solo dígitos y un único
+        /// separador decimal, el que corresponda al formato regional de la PC (coma
+        /// o punto). Bloquea letras, el otro separador y cualquier otro carácter,
         /// tanto al escribir como al pegar.
         /// </summary>
         public static void RestringirACantidad(TextBox tb)
@@ -143,13 +145,21 @@ namespace SistemaGestion
             if (!EsCantidadValida(prospecto)) e.CancelCommand();
         }
 
-        // Válido: dígitos y separadores de miles/decimales (',' o '.'); cualquier otro
-        // carácter (letras, símbolos, espacios) se rechaza. Se aceptan ambos separadores
-        // para no depender de la cultura (es-BO usa ',' decimal y '.' miles; en-US al revés).
+        // Válido: dígitos y, como mucho, una aparición del separador decimal de la
+        // configuración regional actual (NumberDecimalSeparator: ',' o '.' según la PC).
+        // El otro símbolo, letras, espacios o cualquier otro carácter se rechazan.
         private static bool EsCantidadValida(string s)
         {
+            string sepDecimal  = CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator;
+            char   decimalChar = sepDecimal.Length == 1 ? sepDecimal[0] : '.';
+            bool   yaTieneDecimal = false;
+
             foreach (char c in s)
-                if (!char.IsDigit(c) && c != ',' && c != '.') return false;
+            {
+                if (char.IsDigit(c)) continue;
+                if (c == decimalChar && !yaTieneDecimal) { yaTieneDecimal = true; continue; }
+                return false;
+            }
             return true;
         }
 
