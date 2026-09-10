@@ -193,7 +193,6 @@ namespace SistemaGestion
             LblEntradasVal.Text = Fmt(totEntrada);
             LblSalidasVal.Text  = Fmt(totSalida);
 
-            LblTotalGeneral.Text = Fmt(totalActivos);
             LblMovimientos.Text  = Fmt(documentos.Count);
             LblArticulos.Text    = Fmt(articulosSet.Count);
 

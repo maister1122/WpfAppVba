@@ -168,23 +168,15 @@
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="12"/>
                         <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="12"/>
-                        <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
 
                     <Border Grid.Column="0" Style="{StaticResource CardBorder}">
-                        <StackPanel>
-                            <TextBlock Style="{StaticResource KpiTitulo}" Text="TOTAL UNIDADES (TIPO ACTIVO)"/>
-                            <TextBlock x:Name="LblTotalGeneral" Style="{StaticResource KpiValor}" Text="0"/>
-                        </StackPanel>
-                    </Border>
-                    <Border Grid.Column="2" Style="{StaticResource CardBorder}">
                         <StackPanel>
                             <TextBlock Style="{StaticResource KpiTitulo}" Text="MOVIMIENTOS"/>
                             <TextBlock x:Name="LblMovimientos" Style="{StaticResource KpiValor}" Text="0"/>
                         </StackPanel>
                     </Border>
-                    <Border Grid.Column="4" Style="{StaticResource CardBorder}">
+                    <Border Grid.Column="2" Style="{StaticResource CardBorder}">
                         <StackPanel>
                             <TextBlock Style="{StaticResource KpiTitulo}" Text="ARTÍCULOS DISTINTOS"/>
                             <TextBlock x:Name="LblArticulos" Style="{StaticResource KpiValor}" Text="0"/>
