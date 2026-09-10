@@ -52,10 +52,30 @@ namespace SistemaGestion
         {
             // Registrar a qué grilla apunta el click ANTES de confirmar (ver
             // GridFocusHelper.RegistrarClick).
-            GridFocusHelper.RegistrarClick(e.OriginalSource as DependencyObject);
+            var origen = e.OriginalSource as DependencyObject;
+            GridFocusHelper.RegistrarClick(origen);
 
-            GridItems.CommitEdit(DataGridEditingUnit.Row, true);
-            GridCobros.CommitEdit(DataGridEditingUnit.Row, true);
+            // No forzar el commit si el click cae DENTRO de la propia grilla que se
+            // está editando (p.ej. el ComboBox de Categoría o su lista desplegada,
+            // que WPF renderiza en un Popup fuera del árbol visual normal — por eso
+            // EsDescendienteDe cae al árbol lógico cuando el visual se corta). Si se
+            // comitea antes de que ese click llegue al control, el combo se cierra
+            // en el acto y la edición parece bloqueada.
+            if (!EsDescendienteDe(origen, GridItems))
+                GridItems.CommitEdit(DataGridEditingUnit.Row, true);
+            if (!EsDescendienteDe(origen, GridCobros))
+                GridCobros.CommitEdit(DataGridEditingUnit.Row, true);
+        }
+
+        private static bool EsDescendienteDe(DependencyObject? elemento, DependencyObject contenedor)
+        {
+            while (elemento != null)
+            {
+                if (ReferenceEquals(elemento, contenedor)) return true;
+                DependencyObject? padreVisual = elemento is Visual ? VisualTreeHelper.GetParent(elemento) : null;
+                elemento = padreVisual ?? LogicalTreeHelper.GetParent(elemento);
+            }
+            return false;
         }
 
         /// <summary>ID del documento de factura recién creado.</summary>
