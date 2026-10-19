@@ -348,58 +348,6 @@ namespace SistemaGestion
         private List<TraspasoFila> FilasGrid =>
             Grid1.ItemsSource as List<TraspasoFila> ?? new List<TraspasoFila>();
 
-        private TraspasoFila ConstruirFilaTraspaso(string id, int linea)
-        {
-            string origen  = Sql.DocumentosTObj.ObtenerItem("origen",  id)?.ToString() ?? "";
-            string destino = Sql.DocumentosTObj.ObtenerItem("destino", id)?.ToString() ?? "";
-            bool esSalida  = origen == AppState.SucursalActiva;
-
-            var fechaDocObj = Sql.DocumentosTObj.ObtenerItem("fecha", id);
-            DateTime fechaDoc = fechaDocObj != null ? Convert.ToDateTime(fechaDocObj) : default;
-
-            // Columna Origen/Destino: la contraparte relativa a la sucursal activa —
-            // si la activa es el origen, se muestra el destino; caso contrario, el origen.
-            string contraparteId   = origen == AppState.SucursalActiva ? destino : origen;
-            string contraparteDesc = Sql.SucursalesObj.ObtenerItem("descripcion", contraparteId)?.ToString() ?? contraparteId;
-
-            string estado  = Sql.DocumentosTObj.ObtenerItem("estado",  id)?.ToString() ?? "";
-            string emitido = Sql.DocumentosTObj.ObtenerItem("emitido", id)?.ToString() ?? "";
-            if (emitido != AppState.SucursalActiva && estado == "pendiente")
-                estado = "pendiente revisar";
-
-            return new TraspasoFila
-            {
-                Linea           = linea,
-                DocumentoT      = id,
-                Codigo          = Sql.DocumentosTObj.ObtenerItem("codigo", id)?.ToString() ?? "",
-                Fecha           = fechaDoc,
-                FechaStr        = $"{fechaDoc:d} {fechaDoc:HH:mm:ss}",
-                Movimiento      = esSalida ? "salida" : "entrada",
-                ContraparteDesc = contraparteDesc,
-                Referencia      = Sql.DocumentosTObj.ObtenerItem("referencia", id)?.ToString() ?? "",
-                Estado          = estado,
-                UsuarioCreador  = Sql.DocumentosTObj.ObtenerItem("usuario", id)?.ToString() ?? "",
-                Cantidad        = CalcularCantidad(id)
-            };
-        }
-
-        private void RenumerarYTotales()
-        {
-            var lista = FilasGrid;
-            int n = 1;
-            double totalCant = 0;
-            foreach (var f in lista)
-            {
-                f.Linea    = n++;
-                totalCant += f.Cantidad;
-            }
-            TxtTotalCantidad.Text    = totalCant.ToString("N0");
-            TxtTotalDocumentos.Text  = lista.Count.ToString("N0");
-            TxtTotalPendientes.Text  = lista.Count(f => f.Estado == "pendiente").ToString();
-            TxtTotalEntregados.Text  = lista.Count(f => f.Estado == "pendiente revisar").ToString();
-            Grid1.Items.Refresh();
-        }
-
         // ─── Sumar cantidad de artículos del documentoT ───────────────────────
         private static double CalcularCantidad(string documentoT)
         {
@@ -551,10 +499,12 @@ namespace SistemaGestion
             {
                 consola.CerrarPestaña(dlg);
                 if (dlg.DocumentoCreadoId == null) return;   // cancelado
-                var nueva = ConstruirFilaTraspaso(dlg.DocumentoCreadoId, 0);
-                FilasGrid.Add(nueva);
-                RenumerarYTotales();
-                Grid1.SelectedItem = nueva; Grid1.ScrollIntoView(nueva);
+                // Recarga completa (no incremental): así el árbol de meses refleja el
+                // mes del documento recién creado y el listado respeta los filtros activos.
+                CargarMeses();
+                CargarTraspasos();
+                var creada = FilasGrid.FirstOrDefault(f => f.DocumentoT == dlg.DocumentoCreadoId);
+                if (creada != null) { Grid1.SelectedItem = creada; Grid1.ScrollIntoView(creada); }
                 GridFocusHelper.EnfocarCeldaSeleccionada(Grid1);
             };
             // La clave incluye el movimiento: con una sola clave compartida, abrir
@@ -707,7 +657,6 @@ namespace SistemaGestion
         {
             if (Grid1.SelectedItem is not TraspasoFila fila) return;
             string docSel = fila.DocumentoT;
-            int    linea  = fila.Linea;
             AppState.EventoFormularioM = "editar";
             string origenDoc = Sql.DocumentosTObj.ObtenerItem("origen", docSel)?.ToString() ?? "";
             AppState.TipoMovimiento = origenDoc == AppState.SucursalActiva ? "salida" : "entrada";
@@ -721,15 +670,12 @@ namespace SistemaGestion
             dlg.Cerrando += () =>
             {
                 consola.CerrarPestaña(dlg);
-                var lista = FilasGrid;
-                int idx   = lista.IndexOf(fila);
-                if (idx >= 0)
-                {
-                    var actualizada = ConstruirFilaTraspaso(docSel, linea);
-                    lista[idx] = actualizada;
-                    RenumerarYTotales();
-                    Grid1.SelectedItem = actualizada; Grid1.ScrollIntoView(actualizada);
-                }
+                // Recarga completa (no incremental): la edición pudo cambiar el mes
+                // (fecha) del documento, así que el árbol y el listado deben rehacerse.
+                CargarMeses();
+                CargarTraspasos();
+                var actualizada = FilasGrid.FirstOrDefault(f => f.DocumentoT == docSel);
+                if (actualizada != null) { Grid1.SelectedItem = actualizada; Grid1.ScrollIntoView(actualizada); }
                 GridFocusHelper.EnfocarCeldaSeleccionada(Grid1);
             };
             consola.AbrirPestaña(tituloDoc, dlg, $"traspaso-{docSel}");

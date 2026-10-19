@@ -352,55 +352,6 @@ namespace SistemaGestion
         private List<PedidoFila> FilasGrid =>
             Grid1.ItemsSource as List<PedidoFila> ?? new List<PedidoFila>();
 
-        private PedidoFila ConstruirFilaPedido(string id, int linea)
-        {
-            var fechaDocObj = Sql.DocumentosPObj.ObtenerItem("fecha", id);
-            DateTime fechaDoc = fechaDocObj != null ? Convert.ToDateTime(fechaDocObj) : default;
-            string terceroId   = Sql.DocumentosPObj.ObtenerItem("tercero", id)?.ToString() ?? "";
-            string terceroDesc = Sql.TercerosObj.ObtenerItem("descripcion", terceroId)?.ToString() ?? terceroId;
-            string estado  = (Sql.DocumentosPObj.ObtenerItem("estado",  id)?.ToString() ?? "").ToLower();
-            string estadoC = (Sql.DocumentosPObj.ObtenerItem("estadoC", id)?.ToString() ?? "").ToLower();
-            string movDoc  = Sql.DocumentosPObj.ObtenerItem("movimiento", id)?.ToString() ?? "";
-
-            return new PedidoFila
-            {
-                Linea       = linea,
-                DocumentoP  = id,
-                Codigo      = Sql.DocumentosPObj.ObtenerItem("codigo", id)?.ToString() ?? "",
-                Fecha       = fechaDoc,
-                FechaStr    = $"{fechaDoc:d} {fechaDoc:HH:mm:ss}",
-                Movimiento  = movDoc,
-                TerceroDesc = terceroDesc,
-                Referencia  = Sql.DocumentosPObj.ObtenerItem("referencia", id)?.ToString() ?? "",
-                Estado      = estado,
-                Cuenta      = estadoC,
-                UsuarioCreador = Sql.DocumentosPObj.ObtenerItem("usuario", id)?.ToString() ?? "",
-                Cantidad    = CalcularCantidad(id),
-                Importe     = CalcularImporte(id)
-            };
-        }
-
-        private void RenumerarYTotales()
-        {
-            var lista = FilasGrid;
-            int n = 1;
-            double totalCant = 0, totalImporte = 0;
-            foreach (var f in lista)
-            {
-                f.Linea       = n++;
-                totalCant    += f.Cantidad;
-                totalImporte += f.Importe;
-            }
-            TxtTotalCantidad.Text    = totalCant.ToString("N0");
-            TxtTotalImporte.Text     = totalImporte.ToString("N2");
-            TxtTotalDocumentos.Text  = lista.Count.ToString("N0");
-            TxtTotalPendientes.Text  = lista.Count(f => f.Estado == "pendiente"
-                                                     || f.Estado == "pendiente parcial").ToString();
-            TxtCuentaPendientes.Text = lista.Count(f => f.Cuenta == "pendiente"
-                                                     || f.Cuenta == "pendiente parcial").ToString();
-            Grid1.Items.Refresh();
-        }
-
         // ─── Calcular totales de un documentoP ───────────────────────────────
         private static double CalcularCantidad(string documentoP)
         {
@@ -580,10 +531,12 @@ namespace SistemaGestion
             {
                 consola.CerrarPestaña(dlg);
                 if (dlg.DocumentoCreadoId == null) return;
-                var nueva = ConstruirFilaPedido(dlg.DocumentoCreadoId, 0);
-                FilasGrid.Add(nueva);
-                RenumerarYTotales();
-                Grid1.SelectedItem = nueva; Grid1.ScrollIntoView(nueva);
+                // Recarga completa (no incremental): así el árbol de meses refleja el
+                // mes del documento recién creado y el listado respeta los filtros activos.
+                CargarMeses();
+                CargarPedidos();
+                var creada = FilasGrid.FirstOrDefault(f => f.DocumentoP == dlg.DocumentoCreadoId);
+                if (creada != null) { Grid1.SelectedItem = creada; Grid1.ScrollIntoView(creada); }
                 GridFocusHelper.EnfocarCeldaSeleccionada(Grid1);
             };
             consola.AbrirPestaña(titulo, dlg, clave);
@@ -671,7 +624,6 @@ namespace SistemaGestion
         {
             if (Grid1.SelectedItem is not PedidoFila fila) return;
             string docSel  = fila.DocumentoP;
-            int    linea   = fila.Linea;
             AppState.EventoFormularioM = "editar";
             AppState.TipoMovimiento = Sql.DocumentosPObj.ObtenerItem("movimiento", docSel)?.ToString() ?? "venta";
             AppState.TipoPedido     = Sql.DocumentosPObj.ObtenerItem("tipo",       docSel)?.ToString() ?? "rapido";
@@ -685,15 +637,12 @@ namespace SistemaGestion
             dlg.Cerrando += () =>
             {
                 consola.CerrarPestaña(dlg);
-                var lista = FilasGrid;
-                int idx   = lista.IndexOf(fila);
-                if (idx >= 0)
-                {
-                    var actualizada = ConstruirFilaPedido(docSel, linea);
-                    lista[idx] = actualizada;
-                    RenumerarYTotales();
-                    Grid1.SelectedItem = actualizada; Grid1.ScrollIntoView(actualizada);
-                }
+                // Recarga completa (no incremental): la edición pudo cambiar el mes
+                // (fecha) del documento, así que el árbol y el listado deben rehacerse.
+                CargarMeses();
+                CargarPedidos();
+                var actualizada = FilasGrid.FirstOrDefault(f => f.DocumentoP == docSel);
+                if (actualizada != null) { Grid1.SelectedItem = actualizada; Grid1.ScrollIntoView(actualizada); }
                 GridFocusHelper.EnfocarCeldaSeleccionada(Grid1);
             };
             consola.AbrirPestaña(tituloDoc, dlg, $"pedido-{docSel}");

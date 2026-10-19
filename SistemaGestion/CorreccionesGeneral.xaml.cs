@@ -327,42 +327,6 @@ namespace SistemaGestion
         private List<CorreccionFila> FilasGrid =>
             Grid1.ItemsSource as List<CorreccionFila> ?? new List<CorreccionFila>();
 
-        private CorreccionFila ConstruirFila(string id, int linea)
-        {
-            var fechaObj = Sql.DocumentosCObj.ObtenerItem("fecha", id);
-            DateTime fecha = fechaObj != null ? Convert.ToDateTime(fechaObj) : default;
-            return new CorreccionFila
-            {
-                Linea         = linea,
-                Id            = id,
-                Codigo        = Sql.DocumentosCObj.ObtenerItem("codigo", id)?.ToString() ?? "",
-                Fecha         = fecha,
-                FechaStr      = fecha != default ? $"{fecha:d} {fecha:HH:mm:ss}" : "",
-                Movimiento    = NormalizarMovimiento(Sql.DocumentosCObj.ObtenerItem("movimiento", id)?.ToString()),
-                Motivo        = Sql.DocumentosCObj.ObtenerItem("motivo",      id)?.ToString() ?? "",
-                Referencia    = Sql.DocumentosCObj.ObtenerItem("referencia",  id)?.ToString() ?? "",
-                UsuarioCreador = Sql.DocumentosCObj.ObtenerItem("usuario", id)?.ToString() ?? "",
-                CantidadTotal = CalcularCantidad(id)
-            };
-        }
-
-        private void RenumerarYTotales()
-        {
-            var lista = FilasGrid;
-            int n = 1;
-            double totalCant = 0;
-            foreach (var f in lista)
-            {
-                f.Linea    = n++;
-                totalCant += f.CantidadTotal;
-            }
-            TxtTotalCantidad.Text   = totalCant.ToString("N0");
-            TxtTotalDocumentos.Text = lista.Count.ToString("N0");
-            TxtTotalIngresos.Text   = lista.Count(f => f.Movimiento == "repuesta").ToString();
-            TxtTotalEgresos.Text    = lista.Count(f => f.Movimiento == "retirado").ToString();
-            Grid1.Items.Refresh();
-        }
-
         // ─── Suma la cantidad total de las líneas de un documento ─────────────
         private static double CalcularCantidad(string documentoC)
         {
@@ -507,10 +471,12 @@ namespace SistemaGestion
             {
                 consola.CerrarPestaña(dlg);
                 if (dlg.ItemCreadoId == null) return;
-                var nueva = ConstruirFila(dlg.ItemCreadoId, 0);
-                FilasGrid.Add(nueva);
-                RenumerarYTotales();
-                Grid1.SelectedItem = nueva; Grid1.ScrollIntoView(nueva);
+                // Recarga completa (no incremental): así el árbol de meses refleja el
+                // mes del documento recién creado y el listado respeta los filtros activos.
+                CargarMeses();
+                CargarCorrecciones();
+                var creada = FilasGrid.FirstOrDefault(f => f.Id == dlg.ItemCreadoId);
+                if (creada != null) { Grid1.SelectedItem = creada; Grid1.ScrollIntoView(creada); }
                 GridFocusHelper.EnfocarCeldaSeleccionada(Grid1);
             };
             consola.AbrirPestaña(titulo, dlg, clave);
@@ -600,7 +566,6 @@ namespace SistemaGestion
             if (Grid1.SelectedItem is not CorreccionFila fila) return;
 
             string idSel = fila.Id;
-            int    linea = fila.Linea;
             AppState.EventoFormularioC = "editar";
             AppState.TipoCorreccion = NormalizarMovimiento(Sql.DocumentosCObj.ObtenerItem("movimiento", idSel)?.ToString());
 
@@ -614,15 +579,12 @@ namespace SistemaGestion
             dlg.Cerrando += () =>
             {
                 consola.CerrarPestaña(dlg);
-                var lista = FilasGrid;
-                int idx   = lista.IndexOf(fila);
-                if (idx >= 0)
-                {
-                    var actualizada = ConstruirFila(idSel, linea);
-                    lista[idx] = actualizada;
-                    RenumerarYTotales();
-                    Grid1.SelectedItem = actualizada; Grid1.ScrollIntoView(actualizada);
-                }
+                // Recarga completa (no incremental): la edición pudo cambiar el mes
+                // (fecha) del documento, así que el árbol y el listado deben rehacerse.
+                CargarMeses();
+                CargarCorrecciones();
+                var actualizada = FilasGrid.FirstOrDefault(f => f.Id == idSel);
+                if (actualizada != null) { Grid1.SelectedItem = actualizada; Grid1.ScrollIntoView(actualizada); }
                 GridFocusHelper.EnfocarCeldaSeleccionada(Grid1);
             };
             consola.AbrirPestaña(titulo, dlg, $"correccion-{idSel}");
